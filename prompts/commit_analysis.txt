@@ -1,0 +1,228 @@
+================================================================================
+PROMPT TEMPLATES — AI Git Contribution Analyzer
+================================================================================
+All prompts used by the 3-pass LLM pipeline. Each template documents its input
+variables so prompts can be tuned without touching code.
+
+Temperature is set to 0.1 across all calls for scoring consistency — we want
+deterministic evaluation, not creative writing.
+
+================================================================================
+PASS 1 — SPAM DETECTION (Phi-3 Mini via Ollama)
+================================================================================
+Model: phi3
+Temperature: 0.1
+Purpose: Fast binary spam check. Runs on EVERY commit (~2s each).
+Input variables:
+  {subject}          — First line of commit message
+  {lines_added}      — Integer: total lines added
+  {lines_deleted}    — Integer: total lines deleted
+  {total_files}      — Integer: number of files changed
+  {flag_count}       — Integer: number of pre-filter flags triggered
+  {active_flags}     — String: comma-separated list of triggered flag names
+  {burst_indicator}  — Boolean: whether commit is part of a burst (>5 in 30 min)
+  {patch_snippet}    — String: first 500 chars of sanitized diff text
+
+--- PROMPT START ---
+You are a git commit spam detector for a STEM hackathon evaluation system.
+Analyze this commit and determine if it is spam (meaningless, auto-generated,
+padding, noise inflation, or copied content with no real contribution).
+
+COMMIT SUBJECT: {subject}
+STATS: +{lines_added} -{lines_deleted} across {total_files} files
+PRE-FILTER FLAGS: {flag_count} triggered → {active_flags}
+BURST COMMIT: {burst_indicator}
+
+FIRST 500 CHARACTERS OF DIFF:
+~~~
+{patch_snippet}
+~~~
+
+Consider:
+- Does the diff contain real logic changes or just whitespace/formatting?
+- Is the commit message meaningful or auto-generated?
+- Does the volume of changes match the described work?
+
+Respond with ONLY this JSON, nothing else:
+{{"is_spam": true/false, "confidence": 0.0-1.0, "reason": "one sentence"}}
+--- PROMPT END ---
+
+
+================================================================================
+PASS 2 — QUALITY SCORING (LLaMA 3.1 8B via Ollama)
+================================================================================
+Model: llama3.1
+Temperature: 0.1
+Purpose: Deep quality evaluation on three rubric dimensions. Runs on non-spam
+         commits (~5-8s each).
+Input variables:
+  {author_name}            — Commit author's name
+  {subject}                — First line of commit message
+  {body}                   — Commit message body (lines after first)
+  {filename_list}          — Comma-separated filenames changed
+  {file_categories}        — Dict: {"source": N, "test": N, "config": N, ...}
+  {lines_added}            — Integer
+  {lines_deleted}          — Integer
+  {detected_languages}     — List: ["Python", "JavaScript", ...]
+  {cyclomatic_complexity}  — Integer: estimated cyclomatic complexity
+  {cognitive_complexity}   — Integer: estimated cognitive complexity
+  {new_functions}          — List of new function/class names found
+  {new_dependencies}       — List of new imports/requires found
+  {structural_complexity}  — Float 0-1: normalized structural score
+  {commit_hygiene}         — Float 0-1: normalized message hygiene score
+  {diff_quality}           — Float 0-1: normalized diff quality score
+  {collaboration_signal}   — Float: how much this builds on others' work
+  {chain_info}             — String: chain ID and position, or "none"
+  {clone_similarity}       — Float: similarity to prior commits by same author
+  {active_flags}           — List of triggered flag names
+  {sentiment_tone}         — String: "neutral", "positive", or "negative"
+  {is_professional}        — Boolean: commit message professionalism
+  {rubric_text}            — Formatted rubric descriptors from code_quality.json
+  {patch_snippet}          — First 2000 chars of sanitized diff
+
+--- PROMPT START ---
+You are an expert code evaluator for a STEM hackathon peer feedback system.
+Score this git commit on three rubric dimensions. Use the preprocessing
+analysis to inform your scores — do not just count lines.
+
+AUTHOR: {author_name}
+COMMIT MESSAGE: {subject}
+BODY: {body}
+FILES CHANGED: {filename_list} ({file_categories})
+LINES: +{lines_added} -{lines_deleted}
+LANGUAGES: {detected_languages}
+
+PREPROCESSING ANALYSIS:
+- Cyclomatic complexity: {cyclomatic_complexity}
+- Cognitive complexity: {cognitive_complexity}
+- New functions/classes: {new_functions}
+- New dependencies: {new_dependencies}
+- Structural complexity score: {structural_complexity}/1.0
+- Commit hygiene score: {commit_hygiene}/1.0
+- Diff quality score: {diff_quality}/1.0
+- Collaboration signal: {collaboration_signal}
+- Commit chain: {chain_info}
+- Clone similarity to prior commits: {clone_similarity}
+- Sentiment: {sentiment_tone}, professional={is_professional}
+
+FLAGS: {active_flags}
+
+DIFF (first 2000 chars):
+~~~
+{patch_snippet}
+~~~
+
+{rubric_text}
+
+Score the commit on each dimension using the rubric descriptors above.
+Also classify the commit type and explain your reasoning.
+
+Respond with ONLY valid JSON, nothing else:
+{{
+  "complexity": <integer 1-5>,
+  "integrity": <integer 1-5>,
+  "impact": <integer 1-5>,
+  "confidence": <float 0.0-1.0>,
+  "type": "<feature|bugfix|refactor|test|docs|spam|trivial>",
+  "reasoning": "<exactly two sentences explaining your scores>"
+}}
+--- PROMPT END ---
+
+
+================================================================================
+PASS 3 — COACHING FEEDBACK (LLaMA 3.1 8B via Ollama)
+================================================================================
+Model: llama3.1
+Temperature: 0.1
+Purpose: Generate constructive, actionable coaching feedback for commits that
+         scored below average or had multiple flags. Only runs when needed.
+Trigger conditions (any one):
+  - Average of 3 scores < 3.5
+  - flag_count >= 2
+  - LLM confidence < 0.7
+Input variables:
+  {author_name}        — Commit author name
+  {subject}            — First line of commit message
+  {complexity_score}   — Integer 1-5
+  {integrity_score}    — Integer 1-5
+  {impact_score}       — Integer 1-5
+  {commit_type}        — String: feature/bugfix/refactor/etc.
+  {active_flags}       — List of triggered flag names
+  {weakest_dimension}  — The lowest-scoring dimension name
+  {patch_snippet}      — First 1000 chars of diff
+
+--- PROMPT START ---
+You are an AI coding coach helping students improve their STEM project
+contributions. This commit needs improvement. Generate specific, encouraging,
+and actionable feedback.
+
+COMMIT: "{subject}" by {author_name}
+SCORES: complexity={complexity_score}/5, integrity={integrity_score}/5, impact={impact_score}/5
+TYPE: {commit_type}
+WEAKEST AREA: {weakest_dimension}
+FLAGS: {active_flags}
+
+CODE SNIPPET:
+~~~
+{patch_snippet}
+~~~
+
+Guidelines for your feedback:
+- Be specific — reference the actual code when possible
+- Be encouraging — acknowledge what was done well
+- Be actionable — give concrete steps they can take
+- Suggest an improved commit message if integrity is low
+
+Respond with ONLY valid JSON:
+{{
+  "strengths": ["1-2 specific things done well"],
+  "improvements": ["1-2 specific actionable suggestions"],
+  "learning_tip": "one practical technique for next time",
+  "priority": "high|medium|low",
+  "example_improved_message": "suggested better commit message if applicable"
+}}
+--- PROMPT END ---
+
+
+================================================================================
+SELF-CONSISTENCY RE-PROMPT (used when LLM scores conflict with preprocessing)
+================================================================================
+Model: llama3.1
+Temperature: 0.1
+Purpose: Re-evaluate when LLM scores disagree with preprocessing metrics.
+Trigger: |llm_complexity - structural_complexity*5| > 2
+
+--- PROMPT START ---
+Your previous scores seem inconsistent with the preprocessing analysis data.
+
+The code has cyclomatic complexity {cyclomatic_complexity} and cognitive
+complexity {cognitive_complexity}, with {num_new_functions} new functions,
+but you scored complexity as {llm_complexity}/5.
+
+The diff quality score from preprocessing is {diff_quality}, but you scored
+impact as {llm_impact}/5.
+
+Please re-evaluate this commit carefully and respond with corrected JSON:
+{{
+  "complexity": <integer 1-5>,
+  "integrity": <integer 1-5>,
+  "impact": <integer 1-5>,
+  "confidence": <float 0.0-1.0>,
+  "type": "<feature|bugfix|refactor|test|docs|spam|trivial>",
+  "reasoning": "<exactly two sentences>"
+}}
+--- PROMPT END ---
+
+
+================================================================================
+DESIGN NOTES
+================================================================================
+- Temperature 0.1 is used everywhere for CONSISTENCY over creativity. We need
+  reproducible scores, not varied prose.
+- All user-derived content ({subject}, {body}, {patch_snippet}) is sanitized
+  through security.sanitize_for_llm() before prompt interpolation.
+- Prompt delimiters use ~~~ instead of ``` to avoid conflicts with code in diffs.
+- The {rubric_text} variable is dynamically generated from code_quality.json
+  so rubric changes propagate automatically without editing prompts.
+- All JSON responses are parsed through security.validate_json_response() with
+  fallback defaults if parsing fails.

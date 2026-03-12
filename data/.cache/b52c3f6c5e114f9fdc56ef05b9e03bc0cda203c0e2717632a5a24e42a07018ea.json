@@ -1,0 +1,8 @@
+{
+  "complexity": 4,
+  "integrity": 5,
+  "impact": 3,
+  "confidence": 0.9,
+  "type": "test",
+  "reasoning": "The code introduces a new test function with complex logic, including subprocess calls and assertions, indicating a moderate to significant logic change. The commit message accurately describes the addition of an integrity checksum test, making it a perfect match between the message and actual code changes."
+}

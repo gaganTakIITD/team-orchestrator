@@ -1,0 +1,13 @@
+gitpython
+langchain
+langchain-ollama
+llama-index
+llama-index-llms-ollama
+llama-index-embeddings-ollama
+pandas
+streamlit
+plotly
+fastapi
+uvicorn[standard]
+pydantic
+cryptography

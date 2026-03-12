@@ -1,0 +1,5 @@
+{
+  "is_spam": false,
+  "confidence": 0.0,
+  "reason": "The diff contains real logic changes and working code."
+}

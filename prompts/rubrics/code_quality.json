@@ -1,0 +1,65 @@
+{
+  "rubric_name": "Code Contribution Quality",
+  "version": "1.0",
+  "dimensions": [
+    {
+      "name": "complexity",
+      "weight": 0.35,
+      "scale": [1, 5],
+      "descriptors": {
+        "1": "Whitespace/formatting only, no logic change",
+        "2": "Minor variable rename or config tweak",
+        "3": "Moderate logic change, new condition or branch",
+        "4": "Significant feature or algorithm implementation",
+        "5": "Complex algorithm, architectural change, or critical fix"
+      }
+    },
+    {
+      "name": "integrity",
+      "weight": 0.25,
+      "scale": [1, 5],
+      "descriptors": {
+        "1": "Commit message completely misleading or unrelated to actual changes",
+        "2": "Vague message, barely related to diff content",
+        "3": "Partially describes changes, missing important details",
+        "4": "Good description with minor omissions",
+        "5": "Perfect match between commit message and actual code changes"
+      }
+    },
+    {
+      "name": "impact",
+      "weight": 0.30,
+      "scale": [1, 5],
+      "descriptors": {
+        "1": "No meaningful value to the project",
+        "2": "Minor cleanup or trivial addition",
+        "3": "Useful improvement or standard bug fix",
+        "4": "Important feature or significant improvement",
+        "5": "Critical contribution, core functionality or architecture"
+      }
+    }
+  ],
+  "effort_spread_weight": 0.10,
+  "grade_thresholds": {
+    "A+": 4.5,
+    "A": 4.0,
+    "B+": 3.5,
+    "B": 3.0,
+    "C": 2.5,
+    "D": 0
+  },
+  "commit_types": [
+    "feature",
+    "bugfix",
+    "refactor",
+    "test",
+    "docs",
+    "spam",
+    "trivial"
+  ],
+  "coaching_trigger": {
+    "avg_score_below": 3.5,
+    "min_flag_count": 2,
+    "min_confidence_below": 0.7
+  }
+}

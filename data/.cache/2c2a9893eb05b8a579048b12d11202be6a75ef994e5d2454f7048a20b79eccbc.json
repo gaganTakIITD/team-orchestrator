@@ -1,0 +1,8 @@
+{
+  "complexity": 4,
+  "integrity": 5,
+  "impact": 4,
+  "confidence": 0.9,
+  "type": "feature",
+  "reasoning": "The code changes introduce new logic for handling datetime-local inputs and add caching to the dashboard data fetch, indicating a moderate to significant logic change. The commit message accurately describes the changes, making it a perfect match."
+}

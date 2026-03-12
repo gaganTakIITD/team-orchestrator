@@ -1,0 +1,31 @@
+[project]
+name = "team-orchestrator"
+version = "1.0.0"
+description = "AI-Powered Peer Feedback Coach for STEM Outputs — Privacy-first contribution analysis"
+requires-python = ">=3.9"
+dependencies = [
+    "gitpython",
+    "langchain",
+    "langchain-ollama",
+    "llama-index",
+    "llama-index-llms-ollama",
+    "llama-index-embeddings-ollama",
+    "pandas",
+    "streamlit",
+    "plotly",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "cryptography",
+    "requests",
+]
+
+[project.scripts]
+team-orchestrator = "src.cli:main"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src*", "api*", "prompts*"]
