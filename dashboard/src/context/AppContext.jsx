@@ -59,7 +59,7 @@ export function AppProvider({ children }) {
                 const fullName = repo.full_name || (repo.owner_login ? `${repo.owner_login}/${repo.name}` : null) || repo.name;
                 const localProj = (localData || []).find(p =>
                     !usedLocalIds.has(p.project_id) &&
-                    (p.name === repo.name || p.project_id === repo.name || p.project_id === fullName)
+                    (p.repo_full_name === fullName || p.name === repo.name || p.project_id === repo.name || p.project_id === fullName)
                 );
                 if (localProj) {
                     usedLocalIds.add(localProj.project_id);

@@ -28,6 +28,7 @@ def _init_db():
                 project_id TEXT PRIMARY KEY,
                 name TEXT,
                 repo_path TEXT,
+                repo_full_name TEXT,
                 user_name TEXT,
                 user_email TEXT,
                 created_at TEXT,
@@ -37,6 +38,11 @@ def _init_db():
                 authors_json TEXT
             )
         ''')
+        # Migration: add repo_full_name if missing (existing DBs)
+        try:
+            conn.execute("ALTER TABLE projects ADD COLUMN repo_full_name TEXT")
+        except sqlite3.OperationalError:
+            pass  # column already exists
         conn.execute('''
             CREATE TABLE IF NOT EXISTS vectors (
                 project_id TEXT,
@@ -118,6 +124,7 @@ def register_project(
     repo_path: str,
     user_name: str,
     user_email: str,
+    repo_full_name: str = "",
 ) -> dict:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -129,17 +136,21 @@ def register_project(
         
         if row:
             logger.info(f"  Project '{repo_name}' already registered (id: {project_id})")
-            cur.execute("UPDATE projects SET repo_path = ? WHERE project_id = ?", (repo_path, project_id))
+            cur.execute(
+                "UPDATE projects SET repo_path = ?, repo_full_name = COALESCE(?, repo_full_name) WHERE project_id = ?",
+                (repo_path, repo_full_name or None, project_id),
+            )
             proj = dict(row)
             proj["repo_path"] = repo_path
+            proj["repo_full_name"] = repo_full_name or proj.get("repo_full_name") or ""
             proj["registered_by"] = {"name": proj["user_name"], "email": proj["user_email"]}
             proj["authors"] = json.loads(proj["authors_json"] or "[]")
             return proj
             
         cur.execute('''
-            INSERT INTO projects (project_id, name, repo_path, user_name, user_email, created_at, commit_count, author_count, authors_json)
-            VALUES (?, ?, ?, ?, ?, ?, 0, 0, '[]')
-        ''', (project_id, repo_name, repo_path, user_name, user_email, created_at))
+            INSERT INTO projects (project_id, name, repo_path, repo_full_name, user_name, user_email, created_at, commit_count, author_count, authors_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, '[]')
+        ''', (project_id, repo_name, repo_path, repo_full_name or None, user_name, user_email, created_at))
         
         logger.info(f"  ✓ Registered project '{repo_name}' in SQLite (id: {project_id})")
         get_project_dirs(project_id) # ensure directories exist for reports
@@ -148,6 +159,7 @@ def register_project(
             "project_id": project_id,
             "name": repo_name,
             "repo_path": repo_path,
+            "repo_full_name": repo_full_name or "",
             "registered_by": {"name": user_name, "email": user_email},
             "created_at": created_at,
             "last_analyzed": None,
@@ -169,6 +181,7 @@ def list_projects(email_filter: Optional[str] = None) -> List[dict]:
             p = dict(row)
             p["registered_by"] = {"name": p["user_name"], "email": p["user_email"]}
             p["authors"] = json.loads(p.get("authors_json") or "[]")
+            p["repo_full_name"] = p.get("repo_full_name") or ""
             
             if email_filter:
                 if (p["user_email"] == email_filter or email_filter in p["authors"] or
@@ -190,7 +203,39 @@ def get_project(project_id: str) -> Optional[dict]:
         p = dict(row)
         p["registered_by"] = {"name": p["user_name"], "email": p["user_email"]}
         p["authors"] = json.loads(p.get("authors_json") or "[]")
+        p["repo_full_name"] = p.get("repo_full_name") or ""
         return p
+
+
+def get_project_by_repo_full_name(repo_full_name: str) -> Optional[dict]:
+    """Find project by GitHub owner/repo. Used for dashboard matching."""
+    if not repo_full_name:
+        return None
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM projects WHERE repo_full_name = ?", (repo_full_name,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        p = dict(row)
+        p["registered_by"] = {"name": p["user_name"], "email": p["user_email"]}
+        p["authors"] = json.loads(p.get("authors_json") or "[]")
+        p["repo_full_name"] = p.get("repo_full_name") or ""
+        return p
+
+
+# ─── Repo Full Name Update ───────────────────────────────────────────────────
+
+def update_project_repo_full_name(project_id: str, repo_full_name: str) -> None:
+    """Update repo_full_name for dashboard matching by owner/repo."""
+    if not repo_full_name:
+        return
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE projects SET repo_full_name = ? WHERE project_id = ?",
+            (repo_full_name, project_id),
+        )
 
 
 # ─── Stats Update ────────────────────────────────────────────────────────────

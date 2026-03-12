@@ -58,6 +58,7 @@ async def register_project_endpoint(request: ProjectRegister):
         repo_path=request.repo_path,
         user_name=request.user_name,
         user_email=request.user_email,
+        repo_full_name=request.repo_full_name or "",
     )
     audit_log("project_registered", {
         "project_id": request.project_id,
@@ -159,6 +160,7 @@ async def ingest_project_results(project_id: str, request: IngestRequest):
             repo_path=meta.repo_path or "",
             user_name=meta.user_name or "Unknown",
             user_email=meta.user_email or "unknown@unknown",
+            repo_full_name=getattr(meta, "repo_full_name", None) or "",
         )
         proj = project_store.get_project(project_id)
     if not proj:
@@ -168,6 +170,10 @@ async def ingest_project_results(project_id: str, request: IngestRequest):
         project_store.ingest_vectors(project_id, request.vectors)
     if request.scored_commits:
         project_store.ingest_scored_commits(project_id, request.scored_commits)
+
+    # Update repo_full_name if we received it (so dashboard can match by owner/repo)
+    if request.project_meta and getattr(request.project_meta, "repo_full_name", None):
+        project_store.update_project_repo_full_name(project_id, request.project_meta.repo_full_name)
 
     # Update stats (derive authors from vectors or scored_commits)
     author_emails = list(set(v.get("email", "") for v in request.vectors))

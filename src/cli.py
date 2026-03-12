@@ -46,6 +46,24 @@ def _get_git_identity(repo_path: str) -> tuple:
     return name, email
 
 
+def _get_repo_full_name(repo_path: str) -> str:
+    """Parse owner/repo from git remote origin. Returns empty string if not a GitHub repo."""
+    try:
+        import git
+        import re
+        repo = git.Repo(repo_path)
+        if "origin" not in repo.remotes:
+            return ""
+        url = repo.remotes.origin.url
+        # https://github.com/owner/repo.git or git@github.com:owner/repo.git
+        m = re.search(r"github\.com[/:]([^/]+)/([^/]+?)(?:\.git)?$", url)
+        if m:
+            return f"{m.group(1)}/{m.group(2)}"
+    except Exception:
+        pass
+    return ""
+
+
 # ─── init ────────────────────────────────────────────────────────────────────
 
 def cmd_init(args):
@@ -64,16 +82,19 @@ def cmd_init(args):
         print(f"    Run this command from inside a git repo, or use --path")
         sys.exit(1)
 
-    # Read identity
+    # Read identity and GitHub owner/repo from remote
     user_name, user_email = _get_git_identity(repo_path)
     repo_name = os.path.basename(os.path.normpath(repo_path))
     project_id = _derive_project_id(repo_path)
+    repo_full_name = _get_repo_full_name(repo_path)  # owner/repo for dashboard matching
 
     print()
     print("=" * 50)
     print("  🧬 Team Orchestrator — Init")
     print("=" * 50)
     print(f"\n  Repository:  {repo_name}")
+    if repo_full_name:
+        print(f"  GitHub:      {repo_full_name}")
     print(f"  Path:        {repo_path}")
     print(f"  Identity:    {user_name} <{user_email}>")
     print(f"  Project ID:  {project_id}")
@@ -85,6 +106,7 @@ def cmd_init(args):
         repo_path=repo_path,
         user_name=user_name,
         user_email=user_email,
+        repo_full_name=repo_full_name,
     )
 
     # Try to register with server too
@@ -96,6 +118,7 @@ def cmd_init(args):
             "repo_path": repo_path,
             "user_name": user_name,
             "user_email": user_email,
+            "repo_full_name": repo_full_name,
         }, timeout=3)
         if resp.ok:
             print(f"\n  ✓ Registered with server")
@@ -166,7 +189,8 @@ def cmd_analyze(args):
     if not project:
         user_name, user_email = _get_git_identity(repo_path)
         repo_name = os.path.basename(os.path.normpath(repo_path))
-        register_project(project_id, repo_name, repo_path, user_name, user_email)
+        repo_full_name = _get_repo_full_name(repo_path)
+        register_project(project_id, repo_name, repo_path, user_name, user_email, repo_full_name)
 
     if args.latest:
         _analyze_latest(repo_path, project_id)
@@ -373,22 +397,24 @@ def _try_ingest_to_server(project_id: str, vectors: list, dirs: dict = None, pro
             "vectors": vectors,
             "scored_commits": scored_commits,
         }
-        # Include project metadata so server can auto-register if needed
+        # Include project metadata so server can auto-register and match by owner/repo
+        repo_full_name = (project or {}).get("repo_full_name") or _get_repo_full_name(repo_path)
         if project:
             meta = {
                 "repo_name": project.get("name", project_id.split("_")[0] if "_" in project_id else project_id),
                 "repo_path": project.get("repo_path", repo_path),
                 "user_name": project.get("user_name", "Unknown"),
                 "user_email": project.get("user_email", "unknown@unknown"),
+                "repo_full_name": repo_full_name,
             }
         else:
-            # Fallback when project not in local DB (e.g. hook ran before init)
             first = vectors[0] if vectors else {}
             meta = {
                 "repo_name": project_id.split("_")[0] if "_" in project_id else project_id,
                 "repo_path": repo_path,
                 "user_name": first.get("name", "Unknown"),
                 "user_email": first.get("email", "unknown@unknown"),
+                "repo_full_name": repo_full_name,
             }
         payload["project_meta"] = meta
 

@@ -122,6 +122,10 @@ Open http://localhost:5173 — Sign in with your GitHub account!
 
 **If analysis doesn't show on the dashboard:** Start the server first (`team-orchestrator serve`), then run `team-orchestrator analyze`. The CLI pushes analysis data to the server via HTTP after each run. If the server runs elsewhere, set `TEAM_ORCHESTRATOR_SERVER_URL` (e.g. `https://your-server.com`) in your environment.
 
+**Port 8000 in use (Windows `WinError 10013`):** Use a different port: `team-orchestrator serve --port 8001`, then set `TEAM_ORCHESTRATOR_SERVER_URL=http://localhost:8001` before running `analyze`.
+
+**Merge conflict in `data/.audit_log.jsonl`:** This file is now in `.gitignore`. Resolve by: `git checkout --theirs data/.audit_log.jsonl` (or `--ours`), then `git add data/.audit_log.jsonl` and commit. Or remove it from tracking: `git rm --cached data/.audit_log.jsonl`.
+
 ---
 
 ## Role-Based Access Control (RBAC) & Two-Portal System

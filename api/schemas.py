@@ -28,6 +28,7 @@ class ProjectRegister(BaseModel):
     repo_path: str = Field(..., description="Absolute path to git repository")
     user_name: str = Field(..., description="Git user.name")
     user_email: str = Field(..., description="Git user.email")
+    repo_full_name: str = Field(default="", description="GitHub owner/repo for dashboard matching")
 
 
 class IngestProjectMeta(BaseModel):
@@ -35,6 +36,7 @@ class IngestProjectMeta(BaseModel):
     repo_path: str = Field(default="", description="Path to repo")
     user_name: str = Field(default="Unknown", description="Git user.name")
     user_email: str = Field(default="unknown@unknown", description="Git user.email")
+    repo_full_name: str = Field(default="", description="GitHub owner/repo for dashboard matching")
 
 
 class IngestRequest(BaseModel):
@@ -56,6 +58,7 @@ class ProjectInfo(BaseModel):
     project_id: str
     name: str
     repo_path: str
+    repo_full_name: str = Field(default="", description="GitHub owner/repo")
     registered_by: dict = Field(default={}, description="{'name': ..., 'email': ...}")
     created_at: str = ""
     last_analyzed: Optional[str] = None
