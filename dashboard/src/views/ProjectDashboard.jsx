@@ -11,19 +11,42 @@ import { GlassCard } from '../components/layout/GlassCard';
 import { Tabs } from '../components/ui/Tabs';
 import { useAppContext } from '../context/AppContext';
 
+const IconUsers = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+
+const IconGitCommit = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4" /><line x1="1.05" y1="12" x2="7" y2="12" /><line x1="17.01" y1="12" x2="22.96" y2="12" />
+  </svg>
+);
+
+const IconTrendingUp = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+
+const IconAlertTriangle = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
 export function ProjectDashboard({ project }) {
   const { mode, userEmail } = useAppContext();
-  
+
   const [vectors, setVectors] = useState([]);
   const [commits, setCommits] = useState([]);
   const [insights, setInsights] = useState(null);
   const [peerMatrix, setPeerMatrix] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Tab State
   const [activeTab, setActiveTab] = useState(mode === 'Admin' ? 'overview' : 'my_performance');
 
-  // Change default tab if mode switches while mounted
   useEffect(() => {
     setActiveTab(mode === 'Admin' ? 'overview' : 'my_performance');
   }, [mode]);
@@ -71,9 +94,7 @@ export function ProjectDashboard({ project }) {
           </svg>
         </div>
         <h3>No Results Yet</h3>
-        <p>
-          Run <code>team-orchestrator analyze</code> in the repository to generate insights for {project.name}.
-        </p>
+        <p>Run <code>team-orchestrator analyze</code> in the repository to generate insights for {project.name}.</p>
       </div>
     );
   }
@@ -84,7 +105,6 @@ export function ProjectDashboard({ project }) {
     : 0;
   const totalSpam = vectors.reduce((acc, v) => acc + (v.quality_flags?.spam_commits || 0), 0);
 
-  // Tabs Configuration
   const adminTabs = [
     { id: 'overview', label: 'Team Overview' },
     { id: 'leaderboard', label: 'Leaderboard' },
@@ -99,38 +119,62 @@ export function ProjectDashboard({ project }) {
   ];
 
   const tabs = mode === 'Admin' ? adminTabs : userTabs;
+  const roleLabel = mode === 'Admin' ? 'Supervisor View' : 'Contributor View';
 
   return (
-    <div className="space-y-8 slide-up" style={{ paddingBottom: 'var(--space-20)' }}>
+    <div className="slide-up">
       <div className="dashboard-header">
-        <h2>{project.name} {mode === 'Admin' ? 'Supervisor View' : 'Contributor View'}</h2>
+        <h2>
+          {project.name}
+          <span className="role-badge">{roleLabel}</span>
+        </h2>
+        <p>{mode === 'Admin' ? 'Team analytics and management' : 'Your personal contribution insights'}</p>
       </div>
 
       {mode === 'Admin' && (
-        <div className="grid-4col">
-          <GlassCard className="stat-card">
-            <div className="stat-value accent">{vectors.length}</div>
-            <div className="stat-label">Team Members</div>
+        <div className="grid-4col" style={{ marginBottom: 'var(--space-6)', marginTop: 'var(--space-4)' }}>
+          <GlassCard className="stat-card" delay={0}>
+            <div className="stat-card-row">
+              <div className="stat-icon accent"><IconUsers /></div>
+              <div>
+                <div className="stat-value accent">{vectors.length}</div>
+                <div className="stat-label">Team Members</div>
+              </div>
+            </div>
           </GlassCard>
-          <GlassCard className="stat-card">
-            <div className="stat-value success">{totalCommits}</div>
-            <div className="stat-label">Total Commits</div>
+          <GlassCard className="stat-card" delay={0.05}>
+            <div className="stat-card-row">
+              <div className="stat-icon success"><IconGitCommit /></div>
+              <div>
+                <div className="stat-value success">{totalCommits}</div>
+                <div className="stat-label">Total Commits</div>
+              </div>
+            </div>
           </GlassCard>
-          <GlassCard className="stat-card">
-            <div className="stat-value info">{avgComposite}/5.0</div>
-            <div className="stat-label">Avg Score</div>
+          <GlassCard className="stat-card" delay={0.1}>
+            <div className="stat-card-row">
+              <div className="stat-icon info"><IconTrendingUp /></div>
+              <div>
+                <div className="stat-value info">{avgComposite}/5</div>
+                <div className="stat-label">Avg Score</div>
+              </div>
+            </div>
           </GlassCard>
-          <GlassCard className="stat-card">
-            <div className="stat-value danger">{totalSpam}</div>
-            <div className="stat-label">Spam Commits</div>
+          <GlassCard className="stat-card" delay={0.15}>
+            <div className="stat-card-row">
+              <div className="stat-icon danger"><IconAlertTriangle /></div>
+              <div>
+                <div className="stat-value danger">{totalSpam}</div>
+                <div className="stat-label">Spam Commits</div>
+              </div>
+            </div>
           </GlassCard>
         </div>
       )}
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      {/* Tab Routing */}
-      <div className="tab-content" style={{ marginTop: 'var(--space-6)' }}>
+      <div className="tab-content">
         {mode === 'Admin' && (
           <>
             {activeTab === 'overview' && <TeamOverview vectors={vectors} commits={commits} />}

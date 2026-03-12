@@ -2363,3 +2363,6 @@
 {"timestamp": "2026-03-12T22:59:24.625100", "action": "llm_call", "model": "phi3", "input_hash": "e1af03f413efb41f", "success": true, "latency_ms": 54696, "error": null, "extra": {}}
 {"timestamp": "2026-03-12T22:59:32.740572", "action": "api_request", "model": null, "input_hash": "e3b0c44298fc1c14", "success": true, "latency_ms": 4, "error": null, "extra": {"method": "GET", "path": "/api/status", "status": 200}}
 {"timestamp": "2026-03-12T23:00:32.415529", "action": "api_request", "model": null, "input_hash": "e3b0c44298fc1c14", "success": true, "latency_ms": 2, "error": null, "extra": {"method": "GET", "path": "/api/status", "status": 200}}
+{"timestamp": "2026-03-12T23:40:26.446878", "action": "api_request", "model": null, "input_hash": "e3b0c44298fc1c14", "success": true, "latency_ms": 14, "error": null, "extra": {"method": "GET", "path": "/", "status": 200}}
+{"timestamp": "2026-03-12T23:40:27.105916", "action": "api_request", "model": null, "input_hash": "e3b0c44298fc1c14", "success": false, "latency_ms": 0, "error": null, "extra": {"method": "GET", "path": "/favicon.ico", "status": 404}}
+{"timestamp": "2026-03-12T23:40:30.012202", "action": "api_request", "model": null, "input_hash": "e3b0c44298fc1c14", "success": true, "latency_ms": 5, "error": null, "extra": {"method": "GET", "path": "/api/auth/github/login", "status": 307}}

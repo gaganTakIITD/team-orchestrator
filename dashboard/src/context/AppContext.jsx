@@ -126,7 +126,8 @@ export function AppProvider({ children }) {
 
     const value = {
         authUser, isAuthLoading, logout,
-        currentRole, mode: currentRole, // mapping mode to currentRole for backwards compatibility in other files briefly
+        currentRole, mode: currentRole,
+        userEmail: authUser?.email || null,
         projects,
         selectedProject, setSelectedProject,
         status,

@@ -41,7 +41,7 @@ export function Leaderboard({ vectors }) {
           <table className="table">
             <thead>
               <tr>
-                <th>Rank</th>
+                <th>#</th>
                 <th>Name</th>
                 <th>Score</th>
                 <th>Grade</th>
@@ -71,11 +71,11 @@ export function Leaderboard({ vectors }) {
         </div>
       </GlassCard>
 
-      <GlassCard style={{ padding: 'var(--space-6)' }}>
+      <GlassCard className="chart-card-inner">
         <div className="section-subheader">Composite Scores</div>
-        <div className="chart-holder" style={{ height: 256 }}>
+        <div className="chart-holder" style={{ height: 240 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={sorted} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+            <BarChart data={sorted} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
               <XAxis dataKey="name" stroke="var(--chart-grid)" tick={{ fill: 'var(--chart-text)', fontSize: 12 }} />
               <YAxis domain={[0, 5]} stroke="var(--chart-grid)" tick={{ fill: 'var(--chart-text)', fontSize: 12 }} />
               <Tooltip cursor={{ fill: 'var(--color-surface-hover)' }} contentStyle={tooltipStyle} itemStyle={{ color: 'var(--color-text-primary)' }} />

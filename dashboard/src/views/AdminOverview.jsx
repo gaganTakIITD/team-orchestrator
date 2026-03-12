@@ -14,21 +14,19 @@ export function AdminOverview() {
           </svg>
         </div>
         <h3>No Projects Found</h3>
-        <p>
-          No projects have been registered. Use the CLI <code>team-orchestrator init</code> in a git repository.
-        </p>
+        <p>No projects registered. Use <code>team-orchestrator init</code> in a git repository to get started.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 slide-up">
+    <div className="slide-up">
       <div className="dashboard-header">
-        <h2>All Projects Overview</h2>
+        <h2>All Projects</h2>
         <p>System-wide view of analyzed repositories</p>
       </div>
 
-      <GlassCard className="card-flush">
+      <GlassCard className="card-flush" delay={0.1}>
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -45,19 +43,17 @@ export function AdminOverview() {
                 <tr key={p.project_id}>
                   <td>
                     <div className="td-primary" style={{ fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.project_id}>
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.project_id}>
                       {p.project_id}
                     </div>
                   </td>
                   <td>{p.author_count || 0}</td>
                   <td>{p.commit_count || 0}</td>
-                  <td style={{ fontSize: 'var(--text-sm)' }}>
-                    {p.last_analyzed ? new Date(p.last_analyzed).toLocaleString() : 'Never'}
-                  </td>
+                  <td>{p.last_analyzed ? new Date(p.last_analyzed).toLocaleString() : 'Never'}</td>
                   <td>
-                    <div style={{ fontSize: 'var(--text-sm)' }}>{p.registered_by?.name || '\u2014'}</div>
+                    <div>{p.registered_by?.name || '\u2014'}</div>
                     {p.registered_by?.email && (
-                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{p.registered_by.email}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{p.registered_by.email}</div>
                     )}
                   </td>
                 </tr>

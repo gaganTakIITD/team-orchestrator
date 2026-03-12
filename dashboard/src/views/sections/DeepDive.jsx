@@ -9,14 +9,16 @@ const tooltipStyle = {
   color: 'var(--color-text-primary)',
 };
 
+const TYPE_COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#06B6D4', '#EF4444', '#8B5CF6'];
+
 export function DeepDive({ vectors, commits, forceUserEmail }) {
   if (!vectors || vectors.length === 0) return null;
 
-  const initialUser = forceUserEmail 
-    ? vectors.find(v => v.email === forceUserEmail) 
+  const initialUser = forceUserEmail
+    ? vectors.find(v => v.email === forceUserEmail)
     : vectors[0];
   const [selectedName, setSelectedName] = useState(initialUser?.name || vectors[0]?.name);
-  
+
   const selectedV = useMemo(() => vectors.find(v => v.name === selectedName) || vectors[0], [vectors, selectedName]);
 
   const radarData = useMemo(() => {
@@ -34,8 +36,6 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
       .filter(([_, count]) => count > 0)
       .map(([type, count]) => ({ type, count }));
   }, [selectedV]);
-
-  const TYPE_COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#06B6D4', '#EF4444', '#8B5CF6'];
 
   const timelineData = useMemo(() => {
     if (!selectedV || !commits) return [];
@@ -57,19 +57,15 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
       <div className="flex-between">
         <h3 className="section-header">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          Individual Deep Dive
+          {forceUserEmail ? 'My Performance' : 'Individual Deep Dive'}
         </h3>
 
-        {/* HIDE Dropdown if we are forcing a user email (User Mode) */}
         {!forceUserEmail && (
           <div className="select-wrap">
             <select value={selectedName} onChange={(e) => setSelectedName(e.target.value)}>
-              {vectors.map(v => (
-                <option key={v.name} value={v.name}>{v.name}</option>
-              ))}
+              {vectors.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
             </select>
             <svg className="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9" />
@@ -79,9 +75,9 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
       </div>
 
       <div className="grid-2col">
-        <GlassCard style={{ padding: 'var(--space-6)' }}>
+        <GlassCard className="chart-card-inner">
           <div className="section-subheader">Score Profile</div>
-          <div className="chart-holder" style={{ height: 288 }}>
+          <div className="chart-holder" style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                 <PolarGrid stroke="var(--chart-grid)" />
@@ -94,14 +90,14 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
           </div>
         </GlassCard>
 
-        <GlassCard style={{ padding: 'var(--space-6)' }}>
+        <GlassCard className="chart-card-inner">
           <div className="section-subheader">Commit Types</div>
           {typesData.length > 0 ? (
-            <div className="chart-holder" style={{ height: 256 }}>
+            <div className="chart-holder" style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={typesData} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 5 }}>
+                <BarChart data={typesData} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 5 }}>
                   <XAxis type="number" stroke="var(--chart-grid)" tick={{ fill: 'var(--chart-text)' }} />
-                  <YAxis dataKey="type" type="category" stroke="var(--chart-grid)" tick={{ fill: 'var(--color-text-primary)' }} width={80} />
+                  <YAxis dataKey="type" type="category" stroke="var(--chart-grid)" tick={{ fill: 'var(--color-text-primary)', fontSize: 12 }} width={70} />
                   <Tooltip cursor={{ fill: 'var(--color-surface-hover)' }} contentStyle={tooltipStyle} />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                     {typesData.map((_, index) => (
@@ -112,12 +108,12 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="flex-center" style={{ flex: 1, color: 'var(--color-text-muted)', fontStyle: 'italic' }}>No type data</div>
+            <div className="flex-center" style={{ height: 200, color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: 'var(--text-sm)' }}>No type data</div>
           )}
         </GlassCard>
       </div>
 
-      <GlassCard style={{ padding: 'var(--space-6)' }}>
+      <GlassCard className="chart-card-inner">
         <div className="section-subheader">Quality Flags</div>
         <div className="flag-grid">
           <div className="flag-item">
@@ -140,26 +136,22 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
       </GlassCard>
 
       {timelineData.length > 0 && (
-        <GlassCard style={{ padding: 'var(--space-6)' }}>
+        <GlassCard className="chart-card-inner">
           <div className="section-subheader">Commit Activity (Day x Hour)</div>
-          <div className="chart-holder" style={{ height: 256 }}>
+          <div className="chart-holder" style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <XAxis type="number" dataKey="x" name="Hour" domain={[0, 23]} stroke="var(--chart-grid)" tick={{ fill: 'var(--color-text-primary)' }} tickCount={12} />
-                <YAxis type="number" dataKey="y" name="Day" domain={[1, 7]} stroke="var(--chart-grid)" tick={{ fill: 'var(--color-text-primary)' }}
-                  tickFormatter={(val) => {
-                    const days = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                    return days[val] || val;
-                  }}
-                />
-                <ZAxis type="number" dataKey="z" range={[100, 100]} />
+              <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                <XAxis type="number" dataKey="x" name="Hour" domain={[0, 23]} stroke="var(--chart-grid)" tick={{ fill: 'var(--color-text-primary)', fontSize: 11 }} tickCount={12} />
+                <YAxis type="number" dataKey="y" name="Day" domain={[1, 7]} stroke="var(--chart-grid)" tick={{ fill: 'var(--color-text-primary)', fontSize: 11 }}
+                  tickFormatter={(val) => ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][val] || val} />
+                <ZAxis type="number" dataKey="z" range={[80, 80]} />
                 <Tooltip
                   cursor={{ strokeDasharray: '3 3', stroke: 'var(--color-border-active)' }}
                   content={({ payload }) => {
                     if (payload && payload.length) {
                       return (
-                        <div style={{ ...tooltipStyle, padding: '8px 12px' }}>
-                          <p style={{ color: 'var(--color-text-primary)' }}>{`${payload[0].payload.dayStr} at ${payload[0].value}:00`}</p>
+                        <div style={{ ...tooltipStyle, padding: '6px 10px', fontSize: '12px' }}>
+                          {`${payload[0].payload.dayStr} at ${payload[0].value}:00`}
                         </div>
                       );
                     }

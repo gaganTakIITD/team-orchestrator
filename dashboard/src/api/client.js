@@ -8,7 +8,10 @@ const client = axios.create({
   withCredentials: true,
 });
 
+export { client };
+
 export const api = {
+  client,
   getProjects: async (email) => {
     try {
       const res = await client.get('/projects', { params: { email } });

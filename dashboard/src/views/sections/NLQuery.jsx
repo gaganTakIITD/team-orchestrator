@@ -5,8 +5,7 @@ import { api } from '../../api/client';
 
 const IconSearch = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 
@@ -24,7 +23,6 @@ export function NLQuery() {
   const handleAsk = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-
     setIsLoading(true);
     setResponse('');
 
@@ -34,7 +32,6 @@ export function NLQuery() {
     } else {
       setResponse('Could not reach API. Make sure the backend and LLM are running.');
     }
-
     setIsLoading(false);
   };
 
@@ -44,10 +41,10 @@ export function NLQuery() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
-        Ask a Question
+        Ask AI
       </h3>
 
-      <GlassCard style={{ padding: 'var(--space-8)' }}>
+      <GlassCard className="chart-card-inner">
         <form onSubmit={handleAsk} className="query-form">
           <input
             type="text"
@@ -59,15 +56,9 @@ export function NLQuery() {
           />
           <Button type="submit" disabled={isLoading || !query.trim()}>
             {isLoading ? (
-              <>
-                <div className="spinner spinner-sm" />
-                Thinking
-              </>
+              <><div className="spinner spinner-sm" /> Thinking</>
             ) : (
-              <>
-                <IconSearch />
-                Ask AI
-              </>
+              <><IconSearch /> Ask AI</>
             )}
           </Button>
         </form>
@@ -75,12 +66,10 @@ export function NLQuery() {
         {response && (
           <div className="query-response slide-up">
             <div className="query-response-header">
-              <div className="query-response-avatar">
-                <IconBolt />
-              </div>
-              <div style={{ flex: 1 }}>
+              <div className="query-response-avatar"><IconBolt /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="section-subheader">AI Response</div>
-                <p style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>{response}</p>
+                <p style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.65, fontSize: 'var(--text-sm)', wordBreak: 'break-word' }}>{response}</p>
               </div>
             </div>
           </div>
