@@ -98,7 +98,7 @@ export function SelectReposPage() {
           <div className="select-repos-grid">
             {ownedRepos.map(repo => (
               <button
-                key={repo.name}
+                key={repo.full_name || `${repo.owner_login || ''}/${repo.name}` || repo.name}
                 className={`select-repo-card ${selected.has(repo.name) ? 'selected' : ''}`}
                 onClick={() => toggle(repo.name)}
               >
@@ -132,7 +132,7 @@ export function SelectReposPage() {
           <div className="select-repos-grid">
             {otherRepos.map(repo => (
               <button
-                key={repo.name}
+                key={repo.full_name || `${repo.owner_login || ''}/${repo.name}` || repo.name}
                 className={`select-repo-card ${selected.has(repo.name) ? 'selected' : ''}`}
                 onClick={() => toggle(repo.name)}
               >

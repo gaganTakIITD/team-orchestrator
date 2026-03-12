@@ -117,7 +117,7 @@ export function ProfileView() {
         ) : (
           <div className="profile-repo-managed-list">
             {trackedRepos.map(repo => (
-              <div key={repo.project_id || repo.name} className="profile-repo-managed-item">
+              <div key={repo.project_id || repo.full_name || `${repo.owner_login || ''}/${repo.name}` || repo.name} className="profile-repo-managed-item">
                 <div className="profile-repo-managed-info">
                   <div className="profile-repo-managed-name">{repo.name}</div>
                   <div className="profile-repo-managed-meta">
@@ -167,7 +167,7 @@ export function ProfileView() {
                 ) : (
                   availableToAdd.map(repo => (
                     <button
-                      key={repo.name}
+                      key={repo.full_name || `${repo.owner_login || ''}/${repo.name}` || repo.name}
                       className={`modal-repo-item ${addPending.has(repo.name) ? 'selected' : ''}`}
                       onClick={() => toggleAddPending(repo.name)}
                     >

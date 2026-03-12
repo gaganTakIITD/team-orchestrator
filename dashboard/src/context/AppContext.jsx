@@ -51,13 +51,19 @@ export function AppProvider({ children }) {
             const ghRepos = (githubData && githubData.repos) ? githubData.repos : [];
             setAllGithubRepos(ghRepos);
 
+            const usedLocalIds = new Set();
             let mergedProjects = ghRepos.map(repo => {
-                const localProj = (localData || []).find(p => p.name === repo.name || p.project_id === repo.name);
+                const fullName = repo.full_name || (repo.owner_login ? `${repo.owner_login}/${repo.name}` : null) || repo.name;
+                const localProj = (localData || []).find(p =>
+                    !usedLocalIds.has(p.project_id) &&
+                    (p.name === repo.name || p.project_id === repo.name || p.project_id === fullName)
+                );
                 if (localProj) {
-                    return { ...localProj, is_setup: true, html_url: repo.html_url, owner_login: repo.owner_login };
+                    usedLocalIds.add(localProj.project_id);
+                    return { ...localProj, is_setup: true, html_url: repo.html_url, owner_login: repo.owner_login, full_name: fullName };
                 }
                 return {
-                    project_id: repo.name,
+                    project_id: fullName,
                     name: repo.name,
                     repo_path: repo.html_url,
                     html_url: repo.html_url,
@@ -67,6 +73,7 @@ export function AppProvider({ children }) {
                     authors: [],
                     owner_login: repo.owner_login,
                     is_private: repo.private,
+                    full_name: fullName,
                     registered_by: { email: repo.owner_login === authUser.login ? authUser.email : 'unknown' }
                 };
             });
@@ -79,7 +86,9 @@ export function AppProvider({ children }) {
             });
 
             if (selectedRepoNames && selectedRepoNames.size > 0) {
-                mergedProjects = mergedProjects.filter(p => selectedRepoNames.has(p.name));
+                mergedProjects = mergedProjects.filter(p =>
+                    selectedRepoNames.has(p.name) || selectedRepoNames.has(p.full_name)
+                );
             }
 
             mergedProjects.sort((a, b) => {

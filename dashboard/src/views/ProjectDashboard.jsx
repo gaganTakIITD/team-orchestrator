@@ -7,6 +7,9 @@ import { FeedbackCoach } from './sections/FeedbackCoach';
 import { NLQuery } from './sections/NLQuery';
 import { Analytics } from './sections/Analytics';
 import { ExportReports } from './sections/ExportReports';
+import { CommitHeatmap } from './sections/CommitHeatmap';
+import { ActivityFeed } from './sections/ActivityFeed';
+import { TeamHealth } from './sections/TeamHealth';
 import { GlassCard } from '../components/layout/GlassCard';
 import { Tabs } from '../components/ui/Tabs';
 import { useAppContext } from '../context/AppContext';
@@ -45,18 +48,27 @@ export function ProjectDashboard({ project }) {
   const [insights, setInsights] = useState(null);
   const [peerMatrix, setPeerMatrix] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(mode === 'Admin' ? 'overview' : 'my_performance');
+  const [activeTab, setActiveTab] = useState(mode === 'Admin' ? 'health' : 'my_performance');
 
   useEffect(() => {
-    setActiveTab(mode === 'Admin' ? 'overview' : 'my_performance');
+    setActiveTab(mode === 'Admin' ? 'health' : 'my_performance');
   }, [mode]);
 
   useEffect(() => {
     let active = true;
     async function loadData() {
-      setLoading(true);
       if (!project?.project_id) return;
 
+      if (project.is_setup === false) {
+        setVectors([]);
+        setCommits([]);
+        setInsights(null);
+        setPeerMatrix([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       const [vData, cData, iData, pData] = await Promise.all([
         api.getProjectResults(project.project_id),
         api.getProjectCommits(project.project_id),
@@ -106,8 +118,11 @@ export function ProjectDashboard({ project }) {
   const totalSpam = vectors.reduce((acc, v) => acc + (v.quality_flags?.spam_commits || 0), 0);
 
   const adminTabs = [
+    { id: 'health', label: 'Health' },
     { id: 'overview', label: 'Team Overview' },
     { id: 'leaderboard', label: 'Leaderboard' },
+    { id: 'heatmap', label: 'Heatmap' },
+    { id: 'activity', label: 'Activity' },
     { id: 'ask_ai', label: 'Ask AI' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'export', label: 'Export' },
@@ -177,8 +192,11 @@ export function ProjectDashboard({ project }) {
       <div className="tab-content">
         {mode === 'Admin' && (
           <>
+            {activeTab === 'health' && <TeamHealth vectors={vectors} insights={insights} />}
             {activeTab === 'overview' && <TeamOverview vectors={vectors} commits={commits} />}
             {activeTab === 'leaderboard' && <Leaderboard vectors={vectors} />}
+            {activeTab === 'heatmap' && <CommitHeatmap commits={commits} />}
+            {activeTab === 'activity' && <ActivityFeed commits={commits} />}
             {activeTab === 'ask_ai' && <NLQuery />}
             {activeTab === 'analytics' && <Analytics insights={insights} commits={commits} />}
             {activeTab === 'export' && <ExportReports project={project} vectors={vectors} />}

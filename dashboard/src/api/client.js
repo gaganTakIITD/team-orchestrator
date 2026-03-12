@@ -26,7 +26,7 @@ export const api = {
       const res = await client.get(`/projects/${projectId}/results`);
       return res.data;
     } catch (e) {
-      console.error(e);
+      if (e.response?.status !== 404) console.error(e);
       return [];
     }
   },
@@ -35,7 +35,7 @@ export const api = {
       const res = await client.get(`/projects/${projectId}/commits`);
       return res.data;
     } catch (e) {
-      console.error(e);
+      if (e.response?.status !== 404) console.error(e);
       return [];
     }
   },
@@ -44,7 +44,7 @@ export const api = {
       const res = await client.get(`/projects/${projectId}/insights`);
       return res.data;
     } catch (e) {
-      console.error(e);
+      if (e.response?.status !== 404) console.error(e);
       return null;
     }
   },
@@ -53,7 +53,7 @@ export const api = {
       const res = await client.get(`/projects/${projectId}/peer-matrix`);
       return res.data;
     } catch (e) {
-      console.error(e);
+      if (e.response?.status !== 404) console.error(e);
       return [];
     }
   },
