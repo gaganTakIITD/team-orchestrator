@@ -16,6 +16,7 @@ class AnalyzeRequest(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str = Field(..., description="Natural language question about contributions")
+    project_id: Optional[str] = Field(None, description="Project to query (uses project index when set)")
 
 
 class RubricUpdate(BaseModel):

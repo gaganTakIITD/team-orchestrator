@@ -20,10 +20,14 @@ export function ChatHub() {
   const [professorComments, setProfessorComments] = useState([]);
   const scrollRef = useRef(null);
 
-  const professorEmail = selectedProject?.registered_by?.email;
+  const isRepoOwner = selectedProject?.owner_login === authUser?.login;
+  const professorEmail = isRepoOwner ? authUser?.email : (selectedProject?.registered_by?.email || '');
   const professorName = selectedProject?.registered_by?.name || 'Professor';
   const isProfessor = professorEmail === authUser?.email;
   const [professorReplyTo, setProfessorReplyTo] = useState('');
+  const [peers, setPeers] = useState([]);
+  const [selectedPeer, setSelectedPeer] = useState(null);
+  const [peerComments, setPeerComments] = useState([]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -49,6 +53,42 @@ export function ChatHub() {
     return () => { active = false; clearInterval(interval); };
   }, [selectedProject?.project_id, channel, professorEmail]);
 
+  useEffect(() => {
+    let active = true;
+    async function fetchPeers() {
+      if (!selectedProject?.project_id || channel !== 'peers') return;
+      const v = await api.getProjectResults(selectedProject.project_id);
+      if (active && v?.length) setPeers(v.filter(p => p.email !== authUser?.email));
+    }
+    fetchPeers();
+    return () => { active = false; };
+  }, [selectedProject?.project_id, channel, authUser?.email]);
+
+  useEffect(() => {
+    let active = true;
+    setSelectedPeer(null);
+    setPeerComments([]);
+    return () => { active = false; };
+  }, [channel]);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchPeerChat() {
+      if (!selectedProject?.project_id || !selectedPeer?.email || channel !== 'peers') return;
+      const data = await api.getProjectComments(selectedProject.project_id);
+      if (active) {
+        const relevant = data.filter(c =>
+          (c.target_email === selectedPeer.email || c.author_email === selectedPeer.email)
+        );
+        relevant.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setPeerComments(relevant);
+      }
+    }
+    fetchPeerChat();
+    const interval = setInterval(fetchPeerChat, 5000);
+    return () => { active = false; clearInterval(interval); };
+  }, [selectedProject?.project_id, selectedPeer?.email, channel]);
+
   const handleSendAI = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -59,7 +99,10 @@ export function ChatHub() {
     setIsTyping(true);
 
     try {
-      const res = await api.client.post('/query', { question: userText });
+      const res = await api.client.post('/query', {
+        question: userText,
+        project_id: selectedProject?.project_id || undefined,
+      });
       setMessages(prev => [...prev, { role: 'ai', text: res.data.answer }]);
     } catch (err) {
       const is503 = err.response?.status === 503;
@@ -102,9 +145,23 @@ export function ChatHub() {
       return acc;
     }, []);
 
+  const handleSendPeer = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || !selectedProject?.project_id || !selectedPeer?.email) return;
+    const content = input;
+    setInput('');
+    try {
+      const added = await api.createProjectComment(selectedProject.project_id, selectedPeer.email, content);
+      setPeerComments(prev => [...prev, added]);
+    } catch (err) {
+      console.error('Failed to send', err);
+    }
+  };
+
   const handleSend = (e) => {
     if (channel === 'ai') handleSendAI(e);
     else if (channel === 'professor') handleSendProfessor(e);
+    else if (channel === 'peers' && selectedPeer) handleSendPeer(e);
   };
 
   const canSendProfessor = selectedProject && professorEmail && !isProfessor;
@@ -147,11 +204,60 @@ export function ChatHub() {
           {channel === 'peers' ? (
             <div className="chat-peers-view">
               <div className="chat-peers-header">
-                <span>Select a peer to chat with from the Feedback Coach tab.</span>
+                {peers.length === 0 ? (
+                  <span>No team members yet. Run analysis to see peers.</span>
+                ) : !selectedPeer ? (
+                  <span>Select a peer to chat with:</span>
+                ) : (
+                  <span>Chat with {selectedPeer.name}</span>
+                )}
               </div>
-              <div className="chat-peers-hint">
-                <p>💡 Go to <strong>My Coaching</strong> or <strong>Feedback Coach</strong> to message individual team members.</p>
-              </div>
+              {!selectedPeer && peers.length > 0 && (
+                <div className="chat-channel-tabs" style={{ flexWrap: 'wrap', marginBottom: 8 }}>
+                  {peers.map(p => (
+                    <button
+                      key={p.email}
+                      className="chat-channel-tab"
+                      onClick={() => setSelectedPeer(p)}
+                    >
+                      <span className="chat-channel-label">{p.name || p.email}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectedPeer && (
+                <>
+                  <button className="chat-channel-tab" style={{ marginBottom: 8 }} onClick={() => setSelectedPeer(null)}>← Back</button>
+                  <div ref={scrollRef} className="chat-messages" style={{ flex: 1, minHeight: 120 }}>
+                    {peerComments.length === 0 ? (
+                      <div className="chat-empty">No messages yet. Start the conversation!</div>
+                    ) : (
+                      peerComments.map(c => {
+                        const isMe = c.author_email === authUser.email;
+                        return (
+                          <div key={c.id} className={`chat-bubble ${isMe ? 'user' : 'ai'}`}>
+                            <div className="chat-bubble-label">{isMe ? 'You' : c.author_name}</div>
+                            <div className="chat-bubble-text">{c.content}</div>
+                            <div className="chat-bubble-time">{new Date(c.timestamp).toLocaleString()}</div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  <form onSubmit={handleSendPeer} className="chat-input-form">
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder={`Message ${selectedPeer.name}...`}
+                      value={input}
+                      onChange={e => setInput(e.target.value)}
+                    />
+                    <button type="submit" className="chat-send-btn" disabled={!input.trim()}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           ) : channel === 'professor' ? (
             <div className="chat-messages-wrap">

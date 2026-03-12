@@ -12,9 +12,11 @@ export { client };
 
 export const api = {
   client,
-  getProjects: async (email, sync = false) => {
+  getProjects: async (email, sync = false, includeRepoFullNames = []) => {
     try {
-      const res = await client.get('/projects', { params: { email, sync: sync ? '1' : undefined } });
+      const params = { email, sync: sync ? '1' : undefined };
+      if (includeRepoFullNames?.length) params.include_repos = includeRepoFullNames.join(',');
+      const res = await client.get('/projects', { params });
       return res.data;
     } catch (e) {
       console.error(e);

@@ -46,9 +46,11 @@ export function AppProvider({ children }) {
 
         setLoading(true);
         try {
-            let localData = await api.getProjects(authUser.email);
+            const selectedReposData = await api.getSelectedRepos();
+            const repoFullNames = (selectedReposData?.repos || []).map(r => r.repo_full_name || (r.owner_login ? `${r.owner_login}/${r.repo_name}` : r.repo_name)).filter(Boolean);
+            let localData = await api.getProjects(authUser.email, false, repoFullNames);
             if (!localData || localData.length === 0) {
-                localData = await api.getProjects(authUser.email, true);
+                localData = await api.getProjects(authUser.email, true, repoFullNames);
             }
             const githubData = await api.getGithubRepos();
             const ghRepos = (githubData && githubData.repos) ? githubData.repos : [];

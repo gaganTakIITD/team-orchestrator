@@ -171,8 +171,10 @@ def register_project(
 
 # ─── Listing & Retrieval ─────────────────────────────────────────────────────
 
-def list_projects(email_filter: Optional[str] = None) -> List[dict]:
+def list_projects(email_filter: Optional[str] = None, include_repo_full_names: Optional[List[str]] = None) -> List[dict]:
+    """List projects. When email_filter set, return projects for that user. When include_repo_full_names set, also include projects matching those repos (for selected-repos view)."""
     projects = []
+    seen_ids = set()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -182,12 +184,20 @@ def list_projects(email_filter: Optional[str] = None) -> List[dict]:
             p["registered_by"] = {"name": p["user_name"], "email": p["user_email"]}
             p["authors"] = json.loads(p.get("authors_json") or "[]")
             p["repo_full_name"] = p.get("repo_full_name") or ""
-            
+
+            include = False
             if email_filter:
                 if (p["user_email"] == email_filter or email_filter in p["authors"] or
                         p["user_email"] in ("unknown@unknown", "")):
-                    projects.append(p)
+                    include = True
             else:
+                include = True
+
+            if include_repo_full_names and p.get("repo_full_name") in include_repo_full_names:
+                include = True
+
+            if include and p["project_id"] not in seen_ids:
+                seen_ids.add(p["project_id"])
                 projects.append(p)
     return projects
 

@@ -69,11 +69,16 @@ async def register_project_endpoint(request: ProjectRegister):
 
 
 @router.get("/projects", response_model=List[ProjectInfo])
-async def list_projects(email: Optional[str] = Query(None), sync: bool = Query(False)):
-    """List all projects. Filter by email for user mode. If sync=true, load from files first."""
+async def list_projects(
+    email: Optional[str] = Query(None),
+    sync: bool = Query(False),
+    include_repos: Optional[str] = Query(None, description="Comma-separated repo_full_names to include (for selected repos)"),
+):
+    """List projects. Filter by email. Include projects matching selected repos so SQLite data shows for all tracked repos."""
     if sync:
         project_store.sync_all_projects_from_files()
-    projects = project_store.list_projects(email_filter=email)
+    repo_full_names = [r.strip() for r in (include_repos or "").split(",") if r.strip()]
+    projects = project_store.list_projects(email_filter=email, include_repo_full_names=repo_full_names or None)
     return [ProjectInfo(**p) for p in projects]
 
 
@@ -84,22 +89,43 @@ async def sync_projects_from_files():
     return {"message": f"Synced {len(results)} projects", "results": results}
 
 
+@router.get("/projects/by-repo", response_model=ProjectInfo)
+async def get_project_by_repo(repo_full_name: str = Query(..., description="GitHub owner/repo")):
+    """Resolve project by repo_full_name. Use when frontend has owner/repo but needs backend project_id."""
+    proj = project_store.get_project_by_repo_full_name(repo_full_name)
+    if not proj:
+        raise HTTPException(404, f"Project not found for repo: {repo_full_name}")
+    return ProjectInfo(**proj)
+
+
 @router.get("/projects/{project_id}", response_model=ProjectInfo)
 async def get_project(project_id: str):
-    """Get project metadata."""
+    """Get project metadata. Tries repo_full_name lookup if project_id contains '/'."""
     proj = project_store.get_project(project_id)
+    if not proj and "/" in project_id:
+        proj = project_store.get_project_by_repo_full_name(project_id)
     if not proj:
         raise HTTPException(404, f"Project not found: {project_id}")
     return ProjectInfo(**proj)
 
 
+def _resolve_project_id(project_id: str) -> str:
+    """Resolve project_id: if it looks like owner/repo, try repo_full_name lookup."""
+    proj = project_store.get_project(project_id)
+    if proj:
+        return project_id
+    if "/" in project_id:
+        proj = project_store.get_project_by_repo_full_name(project_id)
+        if proj:
+            return proj["project_id"]
+    raise HTTPException(404, f"Project not found: {project_id}")
+
+
 @router.get("/projects/{project_id}/results", response_model=List[dict])
 async def get_project_results(project_id: str):
-    """Get contribution vectors for a specific project."""
-    proj = project_store.get_project(project_id)
-    if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
-    return project_store.load_project_vectors(project_id)
+    """Get contribution vectors for a specific project. Resolves owner/repo to project_id."""
+    pid = _resolve_project_id(project_id)
+    return project_store.load_project_vectors(pid)
 
 
 @router.get("/projects/{project_id}/commits", response_model=List[dict])
@@ -110,11 +136,9 @@ async def get_project_commits(
     min_score: Optional[float] = Query(None),
 ):
     """Get scored commits for a specific project with optional filters."""
-    proj = project_store.get_project(project_id)
-    if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
+    pid = _resolve_project_id(project_id)
 
-    all_commits = project_store.load_project_scored_commits(project_id)
+    all_commits = project_store.load_project_scored_commits(pid)
     commits = []
     for data in all_commits:
         scores = data.get("llm_scores", {})
@@ -217,28 +241,22 @@ async def trigger_project_analysis(project_id: str):
 @router.get("/projects/{project_id}/insights")
 async def get_project_insights(project_id: str):
     """Get team insights for a project."""
-    proj = project_store.get_project(project_id)
-    if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
-    return project_store.load_project_team_insights(project_id)
+    pid = _resolve_project_id(project_id)
+    return project_store.load_project_team_insights(pid)
 
 
 @router.get("/projects/{project_id}/peer-matrix")
 async def get_project_peer_matrix(project_id: str):
     """Get peer review matrix for a project."""
-    proj = project_store.get_project(project_id)
-    if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
-    return project_store.load_project_peer_matrix(project_id)
+    pid = _resolve_project_id(project_id)
+    return project_store.load_project_peer_matrix(pid)
 
 
 @router.get("/projects/{project_id}/comments", response_model=List[CommentResponse])
 async def get_project_comments(project_id: str):
     """Get all feedback comments for a project."""
-    proj = project_store.get_project(project_id)
-    if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
-    comments = project_store.load_project_comments(project_id)
+    pid = _resolve_project_id(project_id)
+    comments = project_store.load_project_comments(pid)
     return [CommentResponse(**c) for c in comments]
 
 
@@ -256,15 +274,13 @@ async def create_project_comment(project_id: str, request: Request, comment: Com
     except Exception:
         raise HTTPException(401, "Invalid token")
         
-    proj = project_store.get_project(project_id)
-    if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
+    pid = _resolve_project_id(project_id)
         
     author_email = user_data.get("email")
     author_name = user_data.get("name")
     
     saved = project_store.save_project_comment(
-        project_id,
+        pid,
         author_email=author_email,
         author_name=author_name,
         target_email=comment.target_email,
@@ -455,10 +471,18 @@ async def get_commits(
 
 @router.post("/query", response_model=QueryResponse)
 async def nl_query(request: QueryRequest):
-    """Query the commit index with natural language."""
+    """Query the commit index with natural language. Use project_id for project-scoped queries (SQLite-backed)."""
     try:
         from src.indexer import load_existing_index, query_index
-        index = load_existing_index()
+        index_dir = None
+        if request.project_id:
+            try:
+                pid = _resolve_project_id(request.project_id)
+                dirs = project_store.get_project_dirs(pid)
+                index_dir = dirs.get("index")
+            except HTTPException:
+                pass
+        index = load_existing_index(index_dir) if index_dir else load_existing_index()
         if not index:
             raise HTTPException(503, "Index not built yet. Run the pipeline first.")
         answer = query_index(index, request.question)
