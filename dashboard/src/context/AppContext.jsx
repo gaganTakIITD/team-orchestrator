@@ -46,7 +46,10 @@ export function AppProvider({ children }) {
 
         setLoading(true);
         try {
-            const localData = await api.getProjects(authUser.email);
+            let localData = await api.getProjects(authUser.email);
+            if (!localData || localData.length === 0) {
+                localData = await api.getProjects(authUser.email, true);
+            }
             const githubData = await api.getGithubRepos();
             const ghRepos = (githubData && githubData.repos) ? githubData.repos : [];
             setAllGithubRepos(ghRepos);
@@ -87,6 +90,7 @@ export function AppProvider({ children }) {
 
             if (selectedRepoNames && selectedRepoNames.size > 0) {
                 mergedProjects = mergedProjects.filter(p =>
+                    p.is_local_only ||
                     selectedRepoNames.has(p.name) || selectedRepoNames.has(p.full_name)
                 );
             }

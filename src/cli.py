@@ -20,7 +20,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 
-SERVER_URL = "http://localhost:8000"
+SERVER_URL = os.environ.get("TEAM_ORCHESTRATOR_SERVER_URL", "http://localhost:8000")
 
 
 def _derive_project_id(repo_path: str) -> str:
@@ -176,7 +176,7 @@ def cmd_analyze(args):
 
 def _analyze_full(repo_path: str, project_id: str):
     """Run the full pipeline on all commits."""
-    from src.project_store import get_project_dirs, update_project_stats
+    from src.project_store import get_project_dirs, update_project_stats, get_project
     from src.security import validate_repo_path, audit_log
 
     import time
@@ -271,8 +271,9 @@ def _analyze_full(repo_path: str, project_id: str):
         "success": True,
     })
 
-    # Try to notify server
-    _try_ingest_to_server(project_id, vectors)
+    # Push to server so dashboard shows data
+    proj = get_project(project_id)
+    _try_ingest_to_server(project_id, vectors, dirs=dirs, project=proj, repo_path=repo_path)
 
     print(f"\n🌐 To start the server:   team-orchestrator serve")
     print(f"📊 To view the dashboard: streamlit run src/dashboard.py")
@@ -282,7 +283,7 @@ def _analyze_full(repo_path: str, project_id: str):
 def _analyze_latest(repo_path: str, project_id: str):
     """Analyze only the latest commit (called by post-commit hook)."""
     import git
-    from src.project_store import get_project_dirs, update_project_stats
+    from src.project_store import get_project_dirs, update_project_stats, get_project
     from src.extractor import _extract_single_commit
     from src.security import sign_output, audit_log
 
@@ -334,8 +335,9 @@ def _analyze_latest(repo_path: str, project_id: str):
         commit_count = len([f for f in os.listdir(dirs["scored"]) if f.endswith(".json")])
         update_project_stats(project_id, commit_count, len(vectors), author_emails)
 
-        # Notify server
-        _try_ingest_to_server(project_id, vectors)
+        # Push to server so dashboard shows data
+        proj = get_project(project_id)
+        _try_ingest_to_server(project_id, vectors, dirs=dirs, project=proj, repo_path=repo_path)
 
         audit_log("incremental_analysis", {
             "project_id": project_id,
@@ -351,19 +353,55 @@ def _analyze_latest(repo_path: str, project_id: str):
         })
 
 
-def _try_ingest_to_server(project_id: str, vectors: list):
-    """Try to POST results to the server. Silently fail if offline."""
+def _try_ingest_to_server(project_id: str, vectors: list, dirs: dict = None, project: dict = None, repo_path: str = ""):
+    """Try to POST analysis results to the server. Silently fail if offline."""
     try:
         import requests
+        from src.utils import load_json
+
+        # Load scored commits from disk so server has full data for dashboard
+        scored_commits = []
+        if dirs and os.path.isdir(dirs.get("scored", "")):
+            for f in os.listdir(dirs["scored"]):
+                if f.endswith(".json"):
+                    try:
+                        scored_commits.append(load_json(os.path.join(dirs["scored"], f)))
+                    except Exception:
+                        pass
+
         payload = {
             "vectors": vectors,
+            "scored_commits": scored_commits,
         }
-        requests.post(
+        # Include project metadata so server can auto-register if needed
+        if project:
+            meta = {
+                "repo_name": project.get("name", project_id.split("_")[0] if "_" in project_id else project_id),
+                "repo_path": project.get("repo_path", repo_path),
+                "user_name": project.get("user_name", "Unknown"),
+                "user_email": project.get("user_email", "unknown@unknown"),
+            }
+        else:
+            # Fallback when project not in local DB (e.g. hook ran before init)
+            first = vectors[0] if vectors else {}
+            meta = {
+                "repo_name": project_id.split("_")[0] if "_" in project_id else project_id,
+                "repo_path": repo_path,
+                "user_name": first.get("name", "Unknown"),
+                "user_email": first.get("email", "unknown@unknown"),
+            }
+        payload["project_meta"] = meta
+
+        resp = requests.post(
             f"{SERVER_URL}/api/projects/{project_id}/ingest",
             json=payload,
-            timeout=5,
+            timeout=10,
         )
-    except Exception:
+        if resp.ok:
+            print(f"\n  ✓ Pushed analysis to server ({SERVER_URL})")
+        else:
+            print(f"\n  ⚠ Server ingest failed: {resp.status_code}")
+    except Exception as e:
         pass  # Server may not be running — that's fine
 
 

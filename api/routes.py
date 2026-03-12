@@ -68,10 +68,19 @@ async def register_project_endpoint(request: ProjectRegister):
 
 
 @router.get("/projects", response_model=List[ProjectInfo])
-async def list_projects(email: Optional[str] = Query(None)):
-    """List all projects. Filter by email for user mode."""
+async def list_projects(email: Optional[str] = Query(None), sync: bool = Query(False)):
+    """List all projects. Filter by email for user mode. If sync=true, load from files first."""
+    if sync:
+        project_store.sync_all_projects_from_files()
     projects = project_store.list_projects(email_filter=email)
     return [ProjectInfo(**p) for p in projects]
+
+
+@router.post("/projects/sync")
+async def sync_projects_from_files():
+    """Sync analysis data from project dirs into SQLite. Use when CLI ran but dashboard shows nothing."""
+    results = project_store.sync_all_projects_from_files()
+    return {"message": f"Synced {len(results)} projects", "results": results}
 
 
 @router.get("/projects/{project_id}", response_model=ProjectInfo)
@@ -138,18 +147,35 @@ async def get_project_commits(
 
 @router.post("/projects/{project_id}/ingest")
 async def ingest_project_results(project_id: str, request: IngestRequest):
-    """Receive analysis results from CLI. Stores vectors and commits."""
+    """Receive analysis results from CLI. Auto-registers project if needed, stores vectors and commits."""
     proj = project_store.get_project(project_id)
+    if not proj and request.project_meta:
+        # Auto-register so commit hook can push without running init on server
+        meta = request.project_meta
+        repo_name = meta.repo_name or (project_id.split("_")[0] if "_" in project_id else project_id)
+        project_store.register_project(
+            project_id=project_id,
+            repo_name=repo_name,
+            repo_path=meta.repo_path or "",
+            user_name=meta.user_name or "Unknown",
+            user_email=meta.user_email or "unknown@unknown",
+        )
+        proj = project_store.get_project(project_id)
     if not proj:
-        raise HTTPException(404, f"Project not found: {project_id}")
+        raise HTTPException(404, f"Project not found: {project_id}. Run 'team-orchestrator init' first or ensure project_meta is sent.")
 
     if request.vectors:
         project_store.ingest_vectors(project_id, request.vectors)
     if request.scored_commits:
         project_store.ingest_scored_commits(project_id, request.scored_commits)
 
-    # Update stats
+    # Update stats (derive authors from vectors or scored_commits)
     author_emails = list(set(v.get("email", "") for v in request.vectors))
+    if not author_emails and request.scored_commits:
+        author_emails = list(set(
+            c.get("author", {}).get("email", "") for c in request.scored_commits
+            if c.get("author", {}).get("email")
+        ))
     project_store.update_project_stats(
         project_id,
         commit_count=len(request.scored_commits) if request.scored_commits else 0,

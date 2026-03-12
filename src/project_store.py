@@ -16,7 +16,8 @@ logger = get_logger("project_store")
 
 # ─── Store Root ──────────────────────────────────────────────────────────────
 
-STORE_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "store")
+_DEFAULT_STORE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "store")
+STORE_ROOT = os.environ.get("TEAM_ORCHESTRATOR_STORE", _DEFAULT_STORE)
 DB_PATH = os.path.join(STORE_ROOT, "team_orchestrator.db")
 
 def _init_db():
@@ -170,7 +171,8 @@ def list_projects(email_filter: Optional[str] = None) -> List[dict]:
             p["authors"] = json.loads(p.get("authors_json") or "[]")
             
             if email_filter:
-                if p["user_email"] == email_filter or email_filter in p["authors"]:
+                if (p["user_email"] == email_filter or email_filter in p["authors"] or
+                        p["user_email"] in ("unknown@unknown", "")):
                     projects.append(p)
             else:
                 projects.append(p)
@@ -316,6 +318,69 @@ def save_project_comment(project_id: str, author_email: str, author_name: str, t
         "content": content,
         "timestamp": timestamp
     }
+
+
+# ─── Sync from Files (ensure SQLite has latest from CLI) ─────────────────────
+
+def sync_project_from_files(project_id: str) -> dict:
+    """Load vectors and commits from project dirs into SQLite. Returns counts."""
+    from src.utils import load_json
+    dirs = get_project_dirs(project_id)
+    vectors = []
+    commits = []
+    vec_dir = dirs["vectors"]
+    scored_dir = dirs["scored"]
+    if os.path.isdir(vec_dir):
+        for f in os.listdir(vec_dir):
+            if f.endswith(".json"):
+                try:
+                    v = load_json(os.path.join(vec_dir, f))
+                    v.pop("_integrity", None)
+                    vectors.append(v)
+                except Exception:
+                    pass
+    if os.path.isdir(scored_dir):
+        for f in os.listdir(scored_dir):
+            if f.endswith(".json"):
+                try:
+                    c = load_json(os.path.join(scored_dir, f))
+                    commits.append(c)
+                except Exception:
+                    pass
+    if vectors:
+        ingest_vectors(project_id, vectors)
+    if commits:
+        ingest_scored_commits(project_id, commits)
+    if vectors or commits:
+        author_emails = list(set(v.get("email", "") for v in vectors))
+        update_project_stats(project_id, len(commits), len(vectors), author_emails)
+    return {"vectors": len(vectors), "commits": len(commits)}
+
+
+def sync_all_projects_from_files() -> List[dict]:
+    """Scan store/projects/ and sync each project's files into SQLite."""
+    projects_dir = os.path.join(STORE_ROOT, "projects")
+    if not os.path.isdir(projects_dir):
+        return []
+    results = []
+    for name in os.listdir(projects_dir):
+        path = os.path.join(projects_dir, name)
+        if os.path.isdir(path) and not name.startswith("."):
+            try:
+                if not get_project(name):
+                    register_project(
+                        project_id=name,
+                        repo_name=name.split("_")[0] if "_" in name else name,
+                        repo_path=path,
+                        user_name="Unknown",
+                        user_email="unknown@unknown",
+                    )
+                counts = sync_project_from_files(name)
+                if counts["vectors"] or counts["commits"]:
+                    results.append({"project_id": name, **counts})
+            except Exception as e:
+                logger.warning(f"Sync failed for {name}: {e}")
+    return results
 
 
 # ─── User Repo Selection ─────────────────────────────────────────────────────

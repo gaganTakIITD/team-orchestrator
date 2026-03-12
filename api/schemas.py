@@ -30,9 +30,17 @@ class ProjectRegister(BaseModel):
     user_email: str = Field(..., description="Git user.email")
 
 
+class IngestProjectMeta(BaseModel):
+    repo_name: str = Field(default="", description="Repository name")
+    repo_path: str = Field(default="", description="Path to repo")
+    user_name: str = Field(default="Unknown", description="Git user.name")
+    user_email: str = Field(default="unknown@unknown", description="Git user.email")
+
+
 class IngestRequest(BaseModel):
     vectors: List[dict] = Field(default=[], description="Contribution vectors to store")
     scored_commits: List[dict] = Field(default=[], description="Scored commits to store")
+    project_meta: Optional[IngestProjectMeta] = Field(default=None, description="Project metadata for auto-register")
 
 
 # ─── Response Models ─────────────────────────────────────────────────────────

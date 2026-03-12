@@ -12,9 +12,9 @@ export { client };
 
 export const api = {
   client,
-  getProjects: async (email) => {
+  getProjects: async (email, sync = false) => {
     try {
-      const res = await client.get('/projects', { params: { email } });
+      const res = await client.get('/projects', { params: { email, sync: sync ? '1' : undefined } });
       return res.data;
     } catch (e) {
       console.error(e);

@@ -61,8 +61,30 @@ ollama pull nomic-embed-text
 
 ### 2. Install Team Orchestrator
 
+**Option A — Install directly from GitHub (recommended):**
+
 ```bash
-cd git-contribution-analyzer
+# If team-orchestrator is in a subdirectory of the repo:
+pip install "git+https://github.com/tejashvikumawat/14_Git_Hooks.git#subdirectory=team-orchestrator"
+
+# Or with pipx (isolated CLI environment, recommended for tools):
+pipx install "git+https://github.com/tejashvikumawat/14_Git_Hooks.git#subdirectory=team-orchestrator"
+```
+
+**Option B — If team-orchestrator has its own repo:**
+
+```bash
+pip install git+https://github.com/YOUR_USERNAME/team-orchestrator.git
+# or with pipx (recommended for CLI tools — isolated env):
+pipx install git+https://github.com/YOUR_USERNAME/team-orchestrator.git
+```
+
+> **Tip:** Use `pipx` instead of `pip` for CLI tools — it installs in an isolated environment and avoids dependency conflicts. Install pipx: `brew install pipx` (Mac) or `pip install pipx` (Linux).
+
+**Option C — Local development (editable install):**
+
+```bash
+cd team-orchestrator
 pip install -e .
 ```
 
@@ -86,7 +108,8 @@ team-orchestrator analyze
 ### 5. Start the Server & Dashboard
 
 ```bash
-# Terminal 1: Start Backend API
+# Terminal 1: Start Backend API (from team-orchestrator directory)
+cd team-orchestrator
 team-orchestrator serve
 
 # Terminal 2: Start React Frontend
@@ -95,7 +118,9 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5174/dashboard — Sign in with your GitHub account!
+Open http://localhost:5173 — Sign in with your GitHub account!
+
+**If analysis doesn't show on the dashboard:** Start the server first (`team-orchestrator serve`), then run `team-orchestrator analyze`. The CLI pushes analysis data to the server via HTTP after each run. If the server runs elsewhere, set `TEAM_ORCHESTRATOR_SERVER_URL` (e.g. `https://your-server.com`) in your environment.
 
 ---
 

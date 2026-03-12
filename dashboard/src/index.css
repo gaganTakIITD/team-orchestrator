@@ -260,6 +260,70 @@ code, kbd {
   pointer-events: none;
 }
 
+/* Clean gradient background (replaces particle lines) */
+.background-gradient {
+  background: linear-gradient(135deg,
+    var(--color-bg) 0%,
+    var(--color-surface) 35%,
+    var(--color-surface-hover) 65%,
+    var(--color-bg) 100%
+  );
+  overflow: hidden;
+}
+
+.background-gradient-mesh {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(58, 130, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(58, 130, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%);
+}
+
+.background-gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  animation: background-orb-float 20s ease-in-out infinite;
+}
+
+.background-orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--color-accent);
+  top: -10%;
+  left: -5%;
+  animation-delay: 0s;
+}
+
+.background-orb-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--color-info);
+  bottom: -5%;
+  right: -5%;
+  animation-delay: -7s;
+}
+
+.background-orb-3 {
+  width: 200px;
+  height: 200px;
+  background: var(--color-success);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -14s;
+  opacity: 0.15;
+}
+
+@keyframes background-orb-float {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(3%, 2%); }
+  66% { transform: translate(-2%, -3%); }
+}
+
 /* ─── Layout Utilities ─── */
 .flex-center {
   display: flex;
