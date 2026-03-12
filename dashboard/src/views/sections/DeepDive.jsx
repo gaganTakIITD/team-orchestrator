@@ -113,6 +113,20 @@ export function DeepDive({ vectors, commits, forceUserEmail }) {
         </GlassCard>
       </div>
 
+      {selectedV.coaching_summary && (selectedV.coaching_summary.top_strengths?.length || selectedV.coaching_summary.top_improvements?.length) && (
+        <GlassCard className="chart-card-inner">
+          <div className="section-subheader">Your Feedback Summary</div>
+          <div className="deep-dive-summary-paragraph">
+            {selectedV.coaching_summary.top_strengths?.length > 0 && (
+              <p><strong>Strengths:</strong> {selectedV.coaching_summary.top_strengths.join('. ')}</p>
+            )}
+            {selectedV.coaching_summary.top_improvements?.length > 0 && (
+              <p><strong>Areas to improve:</strong> {selectedV.coaching_summary.top_improvements.join('. ')}</p>
+            )}
+          </div>
+        </GlassCard>
+      )}
+
       <GlassCard className="chart-card-inner">
         <div className="section-subheader">Quality Flags</div>
         <div className="flag-grid">
