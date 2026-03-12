@@ -188,6 +188,61 @@ async def get_github_repos(request: Request):
             })
         return {"repos": repos}
 
+@router.get("/repos/selected")
+async def get_selected_repos(request: Request):
+    """Get the repos the user has selected to track."""
+    token = request.cookies.get("auth_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    from src import project_store
+    repos = project_store.get_selected_repos(payload["email"])
+    return {"repos": repos, "count": len(repos)}
+
+
+@router.post("/repos/selected")
+async def add_selected_repos(request: Request):
+    """Add repos to the user's selection."""
+    token = request.cookies.get("auth_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    body = await request.json()
+    repos = body.get("repos", [])
+    if not repos:
+        raise HTTPException(status_code=400, detail="No repos provided")
+
+    from src import project_store
+    added = project_store.add_selected_repos(payload["email"], repos)
+    return {"added": len(added), "repos": added}
+
+
+@router.delete("/repos/selected/{repo_name}")
+async def remove_selected_repo(repo_name: str, request: Request):
+    """Remove a repo from the user's selection."""
+    token = request.cookies.get("auth_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    from src import project_store
+    removed = project_store.remove_selected_repo(payload["email"], repo_name)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Repo not found in your selection")
+    return {"message": f"Removed {repo_name} from your selection"}
+
+
 @router.post("/logout")
 async def logout(response: Response):
     """Clears the authentication cookie."""

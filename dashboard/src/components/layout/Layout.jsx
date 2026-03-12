@@ -8,7 +8,7 @@ export function Layout({ children }) {
       <BackgroundScene />
       <div className="app-container">
         <Sidebar />
-        <main className="main-content">
+        <main className="main-content" style={{ marginLeft: 'var(--sidebar-width)' }}>
           <div className="content-wrapper">
             {children}
           </div>
@@ -17,4 +17,3 @@ export function Layout({ children }) {
     </>
   );
 }
- 

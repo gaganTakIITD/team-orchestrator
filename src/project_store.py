@@ -63,13 +63,24 @@ def _init_db():
                 timestamp TEXT
             )
         ''')
-        # Key Insights tables
         conn.execute('''
             CREATE TABLE IF NOT EXISTS project_meta (
                 project_id TEXT,
                 meta_key TEXT,
                 data_json TEXT,
                 PRIMARY KEY (project_id, meta_key)
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS user_selected_repos (
+                user_email TEXT,
+                repo_name TEXT,
+                repo_full_name TEXT,
+                html_url TEXT,
+                owner_login TEXT,
+                is_private INTEGER DEFAULT 0,
+                added_at TEXT,
+                PRIMARY KEY (user_email, repo_name)
             )
         ''')
 
@@ -305,3 +316,54 @@ def save_project_comment(project_id: str, author_email: str, author_name: str, t
         "content": content,
         "timestamp": timestamp
     }
+
+
+# ─── User Repo Selection ─────────────────────────────────────────────────────
+
+def get_selected_repos(user_email: str) -> List[dict]:
+    repos = []
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM user_selected_repos WHERE user_email = ? ORDER BY added_at DESC", (user_email,))
+        for row in cur.fetchall():
+            repos.append(dict(row))
+    return repos
+
+
+def add_selected_repos(user_email: str, repos: List[dict]) -> List[dict]:
+    added = []
+    now = datetime.now().isoformat()
+    with sqlite3.connect(DB_PATH) as conn:
+        for r in repos:
+            conn.execute('''
+                INSERT OR REPLACE INTO user_selected_repos
+                (user_email, repo_name, repo_full_name, html_url, owner_login, is_private, added_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_email,
+                r.get("name", ""),
+                r.get("full_name", ""),
+                r.get("html_url", ""),
+                r.get("owner_login", ""),
+                1 if r.get("private") else 0,
+                now,
+            ))
+            added.append({
+                "user_email": user_email,
+                "repo_name": r.get("name", ""),
+                "repo_full_name": r.get("full_name", ""),
+                "html_url": r.get("html_url", ""),
+                "owner_login": r.get("owner_login", ""),
+                "is_private": r.get("private", False),
+                "added_at": now,
+            })
+    return added
+
+
+def remove_selected_repo(user_email: str, repo_name: str) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM user_selected_repos WHERE user_email = ? AND repo_name = ?",
+                     (user_email, repo_name))
+        return cur.rowcount > 0

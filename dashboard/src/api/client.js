@@ -122,5 +122,32 @@ export const api = {
     } catch (e) {
       return false;
     }
-  }
+  },
+
+  getSelectedRepos: async () => {
+    try {
+      const res = await client.get('/auth/repos/selected');
+      return res.data;
+    } catch (e) {
+      return { repos: [], count: 0 };
+    }
+  },
+  addSelectedRepos: async (repos) => {
+    try {
+      const res = await client.post('/auth/repos/selected', { repos });
+      return res.data;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+  removeSelectedRepo: async (repoName) => {
+    try {
+      const res = await client.delete(`/auth/repos/selected/${encodeURIComponent(repoName)}`);
+      return res.data;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
 };

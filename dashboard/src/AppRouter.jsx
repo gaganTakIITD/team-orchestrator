@@ -7,6 +7,7 @@ import { ProjectDashboard } from './views/ProjectDashboard';
 import { LandingPage } from './views/LandingPage';
 import { LoginPage } from './views/LoginPage';
 import { ProfileView } from './views/ProfileView';
+import { SelectReposPage } from './views/SelectReposPage';
 
 function DashboardContent() {
   const { currentRole, selectedProject, userEmail, loading } = useAppContext();
@@ -33,7 +34,7 @@ function DashboardContent() {
           </svg>
         </div>
         <h3>Welcome to Team Orchestrator</h3>
-        <p>You are in <strong>Contributor Mode</strong>. Please enter your Git Email in the sidebar to view your personalized dashboard and feedback.</p>
+        <p>You are in <strong>Contributor Mode</strong>. Select a project from the sidebar to view your dashboard.</p>
       </div>
     );
   }
@@ -51,9 +52,9 @@ function DashboardContent() {
 }
 
 function ProtectedRoute() {
-  const { authUser, isAuthLoading } = useAppContext();
+  const { authUser, isAuthLoading, hasCompletedOnboarding } = useAppContext();
 
-  if (isAuthLoading) {
+  if (isAuthLoading || hasCompletedOnboarding === null) {
     return (
       <div className="flex-center" style={{ minHeight: '100vh' }}>
         <div className="spinner" />
@@ -72,14 +73,37 @@ function ProtectedRoute() {
   );
 }
 
+function OnboardingGuard() {
+  const { authUser, isAuthLoading, hasCompletedOnboarding } = useAppContext();
+
+  if (isAuthLoading || hasCompletedOnboarding === null) {
+    return (
+      <div className="flex-center" style={{ minHeight: '100vh' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!hasCompletedOnboarding) {
+    return <Navigate to="/dashboard/select-repos" replace />;
+  }
+
+  return <DashboardContent />;
+}
+
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<ProtectedRoute />}>
-        <Route index element={<DashboardContent />} />
+        <Route index element={<OnboardingGuard />} />
         <Route path="profile" element={<ProfileView />} />
+        <Route path="select-repos" element={<SelectReposPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

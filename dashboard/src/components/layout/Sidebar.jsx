@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -39,11 +39,30 @@ const IconLogout = () => (
 );
 
 const IconSettings = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3" />
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
+
+const IconRefresh = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+function getRepoStatus(p) {
+  if (p.is_setup === false) return { label: 'Not Set Up', cls: 'not-analyzed' };
+  if (p.commit_count > 0 && p.author_count > 0) return { label: 'Scored', cls: 'scored' };
+  if (p.commit_count > 0) return { label: 'Analyzed', cls: 'scored' };
+  return { label: 'Pending', cls: 'pending' };
+}
+
+function getAvgScore(p) {
+  if (!p.avg_score && !p.composite_avg) return null;
+  return p.avg_score || p.composite_avg || null;
+}
 
 export function Sidebar() {
   const navigate = useNavigate();
@@ -53,17 +72,25 @@ export function Sidebar() {
     currentRole, projects,
     selectedProject, setSelectedProject,
     status, authUser, logout,
+    refreshProjects,
   } = useAppContext();
   const { theme, setTheme } = useTheme();
 
   const statusClass = status ? `status-pill status-${status.status}` : 'status-pill';
 
-  const filteredProjects = (projects || [])
-    .filter(p => showAllRepos || p.is_setup !== false)
-    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredProjects = useMemo(() => {
+    return (projects || [])
+      .filter(p => showAllRepos || p.is_setup !== false)
+      .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [projects, showAllRepos, searchQuery]);
+
+  const analyzedCount = useMemo(() => {
+    return (projects || []).filter(p => p.is_setup !== false && p.commit_count > 0).length;
+  }, [projects]);
 
   return (
     <nav className="sidebar" role="navigation" aria-label="Main navigation">
+      {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon"><IconActivity /></div>
         <div className="sidebar-logo-text">
@@ -73,17 +100,14 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar-body">
-        <div className="sidebar-section">
-          <div className="sidebar-section-label">Theme</div>
-          <div className="theme-toggle">
-            <button className={`theme-toggle-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')} title="Dark Onyx"><IconMoon /></button>
-            <button className={`theme-toggle-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')} title="Light Mist"><IconSun /></button>
-            <button className={`theme-toggle-btn ${theme === 'comfort' ? 'active' : ''}`} onClick={() => setTheme('comfort')} title="Comfort Sepia"><IconEye /></button>
-          </div>
-        </div>
-
+        {/* Account Section */}
         <div className="sidebar-user-box">
-          <div className="sidebar-section-label">Account</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <div className="sidebar-section-label" style={{ marginBottom: 0 }}>Account</div>
+            <span style={{ fontSize: '9px', fontWeight: 600, color: currentRole === 'Admin' ? 'var(--color-accent)' : 'var(--color-success)', background: currentRole === 'Admin' ? 'var(--color-accent-subtle)' : 'var(--color-success-subtle)', padding: '1px 6px', borderRadius: '4px' }}>
+              {currentRole === 'Admin' ? 'Supervisor' : 'Contributor'}
+            </span>
+          </div>
           <div className="sidebar-user-email">{authUser?.email || 'Not authenticated'}</div>
           <button className="sidebar-user-link" onClick={() => navigate('/dashboard/profile')}>
             <IconSettings />
@@ -91,24 +115,44 @@ export function Sidebar() {
           </button>
         </div>
 
-        <hr className="sidebar-divider" />
+        {/* Theme */}
+        <div className="sidebar-section">
+          <div className="theme-toggle">
+            <button className={`theme-toggle-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')} title="Dark"><IconMoon /></button>
+            <button className={`theme-toggle-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')} title="Light"><IconSun /></button>
+            <button className={`theme-toggle-btn ${theme === 'comfort' ? 'active' : ''}`} onClick={() => setTheme('comfort')} title="Sepia"><IconEye /></button>
+          </div>
+        </div>
 
+        {/* Repositories - bounded scrollable container */}
         <div className="project-list-container">
           <div className="project-list-header">
-            <div className="sidebar-section-label" style={{ marginBottom: 0 }}>Repositories</div>
-            {projects && projects.length > 0 && (
-              <button className="show-toggle-btn" onClick={() => setShowAllRepos(!showAllRepos)}>
-                {showAllRepos ? 'Active Only' : 'Show All'}
-              </button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div className="sidebar-section-label" style={{ marginBottom: 0 }}>Repos</div>
+              {projects && projects.length > 0 && (
+                <span className="project-count">{analyzedCount}/{projects.length}</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {refreshProjects && (
+                <button className="show-toggle-btn" onClick={refreshProjects} title="Refresh repos">
+                  <IconRefresh style={{ width: 10, height: 10 }} />
+                </button>
+              )}
+              {projects && projects.length > 3 && (
+                <button className="show-toggle-btn" onClick={() => setShowAllRepos(!showAllRepos)}>
+                  {showAllRepos ? 'Active' : 'All'}
+                </button>
+              )}
+            </div>
           </div>
 
-          {projects && projects.length > 0 && (
+          {projects && projects.length > 3 && (
             <div className="project-search">
               <input
                 type="text"
                 className="input"
-                placeholder="Search..."
+                placeholder="Search repos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -117,25 +161,45 @@ export function Sidebar() {
 
           {filteredProjects.length > 0 ? (
             <div className="project-list">
-              {filteredProjects.map((p) => (
-                <button
-                  key={p.project_id}
-                  className={`project-item ${selectedProject?.project_id === p.project_id ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedProject(p);
-                    navigate('/dashboard');
-                  }}
-                >
-                  <div className="project-item-row">
-                    <div className="project-item-name">{p.name}</div>
-                    {p.is_setup === false && <span className="project-pending-badge">Pending</span>}
-                  </div>
-                  <div className="project-item-meta">{p.commit_count || 0} commits</div>
-                  {currentRole === 'Admin' && p.authors && p.authors.length > 0 && (
-                    <div className="project-contributors">{p.authors.join(', ')}</div>
-                  )}
-                </button>
-              ))}
+              {filteredProjects.map((p) => {
+                const repoStatus = getRepoStatus(p);
+                const avgScore = getAvgScore(p);
+                return (
+                  <button
+                    key={p.project_id}
+                    className={`project-item ${selectedProject?.project_id === p.project_id ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedProject(p);
+                      navigate('/dashboard');
+                    }}
+                  >
+                    <div className="project-item-row">
+                      <div className="project-item-name">{p.name}</div>
+                      <span className={`project-status-badge ${repoStatus.cls}`}>
+                        {repoStatus.label}
+                      </span>
+                    </div>
+                    <div className="project-item-meta">
+                      <span>{p.commit_count || 0} commits</span>
+                      {p.author_count > 0 && <span>&middot; {p.author_count} authors</span>}
+                      {avgScore && <span>&middot; {avgScore.toFixed(1)}/5</span>}
+                    </div>
+                    {avgScore && (
+                      <div className="project-score-bar">
+                        <div className="project-score-bar-fill" style={{ width: `${(avgScore / 5) * 100}%` }} />
+                      </div>
+                    )}
+                    {p.last_analyzed && (
+                      <div className="project-contributors">
+                        Analyzed {new Date(p.last_analyzed).toLocaleDateString()}
+                      </div>
+                    )}
+                    {!p.last_analyzed && currentRole === 'Admin' && p.authors && p.authors.length > 0 && (
+                      <div className="project-contributors">{p.authors.join(', ')}</div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <div className="project-empty">
@@ -145,6 +209,7 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* Footer - pinned at bottom */}
       <div className="sidebar-footer">
         <div className="sidebar-section-label">System</div>
         {status ? (
@@ -160,12 +225,12 @@ export function Sidebar() {
         ) : (
           <div className="status-pill">
             <div className="status-dot" />
-            <div>Offline / Polling...</div>
+            <div>Offline</div>
           </div>
         )}
 
         {authUser && (
-          <button className="btn btn-ghost btn-full btn-sm" style={{ marginTop: 'var(--space-2)' }} onClick={logout}>
+          <button className="btn btn-ghost btn-full btn-sm" style={{ marginTop: '6px' }} onClick={logout}>
             <IconLogout /> Sign Out
           </button>
         )}
