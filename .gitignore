@@ -38,6 +38,7 @@ ENV/
 
 # Project specific
 store/
+data/.audit_log.jsonl
 data/scored_commits/
 data/preprocessed_commits/
 data/vectors/
