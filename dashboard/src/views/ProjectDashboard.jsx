@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { Leaderboard } from './sections/Leaderboard';
 import { DeepDive } from './sections/DeepDive';
+import { ContributorMessages } from './sections/ContributorMessages';
 import { TeamOverview } from './sections/TeamOverview';
 import { FeedbackCoach } from './sections/FeedbackCoach';
 import { NLQuery } from './sections/NLQuery';
@@ -131,6 +132,7 @@ export function ProjectDashboard({ project }) {
   const userTabs = [
     { id: 'my_performance', label: 'My Performance' },
     { id: 'my_coaching', label: 'My Coaching' },
+    { id: 'messages', label: 'Messages' },
   ];
 
   const tabs = mode === 'Admin' ? adminTabs : userTabs;
@@ -210,6 +212,9 @@ export function ProjectDashboard({ project }) {
             )}
             {activeTab === 'my_coaching' && (
               <FeedbackCoach vectors={vectors} peerMatrix={peerMatrix} forceUserEmail={userEmail} />
+            )}
+            {activeTab === 'messages' && (
+              <ContributorMessages vectors={vectors} />
             )}
           </>
         )}

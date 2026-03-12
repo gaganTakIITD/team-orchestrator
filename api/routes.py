@@ -153,12 +153,15 @@ async def get_project_commits(
             if avg < min_score:
                 continue
 
+        ts = data.get("timestamps", {})
         commits.append({
             "short_hash": data.get("short_hash", ""),
             "author_name": data.get("author", {}).get("name", ""),
             "author_email": data.get("author", {}).get("email", ""),
+            "author": data.get("author", {}),
             "subject": data.get("message", {}).get("subject", ""),
-            "date": data.get("timestamps", {}).get("authored_date", ""),
+            "date": ts.get("authored_date", ""),
+            "timestamps": ts,
             "commit_type": scores.get("type", "unknown"),
             "complexity": scores.get("complexity", 0),
             "integrity": scores.get("integrity", 0),
