@@ -5,6 +5,7 @@ import { Layout } from './components/layout/Layout';
 import { AdminOverview } from './views/AdminOverview';
 import { ProjectDashboard } from './views/ProjectDashboard';
 import { LandingPage } from './views/LandingPage';
+import { DocumentationPage } from './views/DocumentationPage';
 import { LoginPage } from './views/LoginPage';
 import { ProfileView } from './views/ProfileView';
 import { SelectReposPage } from './views/SelectReposPage';
@@ -99,6 +100,7 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/docs" element={<DocumentationPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<ProtectedRoute />}>
         <Route index element={<OnboardingGuard />} />

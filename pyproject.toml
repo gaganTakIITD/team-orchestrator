@@ -39,8 +39,8 @@ dependencies = [
 team-orchestrator = "src.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/tejashvikumawat/14_Git_Hooks"
-Repository = "https://github.com/tejashvikumawat/14_Git_Hooks"
+Homepage = "https://github.com/gaganTakIITD/team-orchestrator"
+Repository = "https://github.com/gaganTakIITD/team-orchestrator"
 
 [build-system]
 requires = ["setuptools>=64"]

@@ -3099,6 +3099,711 @@ code, kbd {
   font-weight: 500;
 }
 
+.landing-footer-link {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+.landing-footer-link:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DOCUMENTATION PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+.doc-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.doc-container {
+  display: flex;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-8);
+  position: relative;
+  z-index: 1;
+}
+
+.doc-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--space-8);
+  height: fit-content;
+}
+
+.doc-back {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: var(--space-6);
+}
+.doc-back:hover { text-decoration: underline; }
+
+.doc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doc-nav-item {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.doc-nav-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+.doc-nav-item.active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+
+.doc-content {
+  flex: 1;
+  max-width: 720px;
+  margin-left: var(--space-12);
+}
+
+.doc-header {
+  margin-bottom: var(--space-12);
+}
+
+.doc-header h1 {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.doc-subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.doc-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.doc-section {
+  scroll-margin-top: var(--space-8);
+}
+
+.doc-section h4[id] {
+  scroll-margin-top: var(--space-8);
+}
+
+.doc-section h2 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.doc-section h4 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: var(--space-6) 0 var(--space-2);
+}
+
+.doc-section p, .doc-section li {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-3);
+}
+
+.doc-section ul {
+  margin-left: var(--space-5);
+  padding-left: 0;
+}
+
+.doc-section code {
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+  color: var(--color-accent);
+}
+
+.doc-code {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+  white-space: pre;
+}
+
+.doc-tree {
+  margin: var(--space-6) 0;
+  overflow-x: auto;
+}
+
+.doc-tree pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  white-space: pre;
+  margin: 0;
+}
+
+/* ─── Interactive Documentation Diagrams ─── */
+.workflow-diagram,
+.pipeline-diagram,
+.structure-diagram {
+  margin: var(--space-6) 0;
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.workflow-diagram__label,
+.pipeline-diagram__label,
+.structure-diagram__label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.workflow-diagram__canvas,
+.pipeline-diagram__canvas,
+.structure-diagram__canvas {
+  display: none;
+}
+
+.workflow-diagram__rf-node,
+.pipeline-diagram__rf-node,
+.structure-diagram__rf-node {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.workflow-diagram__rf-node:hover,
+.pipeline-diagram__rf-node:hover,
+.structure-diagram__rf-node:hover {
+  background: var(--color-surface-hover);
+}
+
+.workflow-diagram__rf-icon,
+.pipeline-diagram__rf-icon,
+.structure-diagram__rf-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-subtle);
+}
+
+.workflow-diagram__rf-icon svg,
+.pipeline-diagram__rf-icon svg,
+.structure-diagram__rf-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--color-accent);
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.workflow-diagram__rf-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workflow-diagram__rf-label,
+.pipeline-diagram__rf-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+}
+
+.workflow-diagram__rf-sublabel,
+.pipeline-diagram__rf-detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.pipeline-diagram__rf-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pipeline-diagram__rf-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.pipeline-diagram__rf-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.structure-diagram__rf-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ─── Tree diagrams (vertical, no overflow) ─── */
+
+.tree-diagram {
+  padding: var(--space-4) 0;
+  overflow: hidden;
+}
+
+.tree-diagram__root {
+  margin-bottom: var(--space-3);
+}
+
+.tree-diagram__body {
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--color-border);
+}
+
+.tree-diagram__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.tree-diagram__row:last-child {
+  margin-bottom: 0;
+}
+
+.tree-diagram__connector {
+  flex-shrink: 0;
+  width: 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.tree-diagram__connector--v::before {
+  content: "├── ";
+}
+
+/* Tree branch (nested) */
+.tree-branch {
+  width: 100%;
+}
+
+.tree-branch__parent {
+  margin-bottom: var(--space-2);
+}
+
+.tree-branch__parent--collapsible {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tree-branch__parent--collapsible:hover {
+  opacity: 0.9;
+}
+
+.tree-branch__chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.tree-branch__children {
+  padding-left: var(--space-4);
+  margin-left: var(--space-2);
+  border-left: 2px solid var(--color-border);
+}
+
+.tree-branch__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.tree-branch__row:last-child {
+  margin-bottom: 0;
+}
+
+.tree-branch__connector {
+  flex-shrink: 0;
+  width: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.tree-branch__connector::before {
+  content: "├── ";
+}
+
+/* ─── File tree (collapsible) ─── */
+.file-tree {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.file-tree__root {
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.file-tree__item {
+  margin: 0;
+}
+
+.file-tree__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text-primary);
+  transition: background var(--transition-fast);
+}
+
+.file-tree__row:hover {
+  background: var(--color-surface-hover);
+}
+
+.file-tree__row--folder {
+  font-weight: 500;
+}
+
+.file-tree__row--folder svg {
+  color: var(--color-accent);
+}
+
+.file-tree__row--file {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.file-tree__row--file svg {
+  color: var(--color-text-muted);
+}
+
+.file-tree__chevron {
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.file-tree__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.file-tree__children {
+  border-left: 1px solid var(--color-border);
+  margin-left: 10px;
+  padding-left: 8px;
+}
+
+/* ─── Pipeline tree (collapsible) ─── */
+.pipeline-tree__root {
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.pipeline-tree__stage {
+  margin: 0;
+}
+
+.pipeline-tree__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text-primary);
+  transition: background var(--transition-fast);
+}
+
+.pipeline-tree__row:hover {
+  background: var(--color-surface-hover);
+}
+
+.pipeline-tree__row--parent {
+  font-weight: 600;
+}
+
+.pipeline-tree__row--parent svg {
+  color: var(--color-accent);
+}
+
+.pipeline-tree__row--leaf {
+  font-weight: 500;
+}
+
+.pipeline-tree__row--leaf svg {
+  color: var(--color-accent);
+}
+
+.pipeline-tree__chevron {
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.pipeline-tree__spacer {
+  width: 16px;
+  height: 16px;
+}
+
+.pipeline-tree__num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pipeline-tree__num-spacer {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.pipeline-tree__children {
+  border-left: 2px solid var(--color-accent);
+  margin-left: 12px;
+  padding-left: 12px;
+}
+
+/* Tree nodes */
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tree-node--root {
+  background: var(--color-surface-raised);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-5);
+}
+
+.tree-node--root svg {
+  color: var(--color-accent);
+}
+
+.tree-node--parent {
+  font-weight: 500;
+}
+
+.tree-node--leaf {
+  cursor: pointer;
+  border: none;
+  background: var(--color-surface);
+  transition: all var(--transition-base);
+}
+
+.tree-node--leaf:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.tree-node--leaf svg {
+  color: var(--color-accent);
+}
+
+.tree-node--sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+}
+
+.tree-node__step {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tree-node--pipeline {
+  font-size: var(--text-xs);
+}
+
+.tree-node--structure {
+  font-family: var(--font-mono);
+}
+
+.tree-node--file {
+  font-size: 0.85em;
+  color: var(--color-text-muted);
+}
+
+.tree-node--file svg {
+  color: var(--color-text-muted);
+}
+
+.workflow-diagram__label,
+.pipeline-diagram__label,
+.structure-diagram__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-4);
+}
+
+.workflow-diagram,
+.pipeline-diagram,
+.structure-diagram {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.tree-node {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  margin: var(--space-4) 0;
+}
+
+.doc-table th,
+.doc-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.doc-table th {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.doc-table td {
+  color: var(--color-text-secondary);
+}
+
+.doc-table code {
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85em;
+}
+
+@media (max-width: 900px) {
+  .doc-container { flex-direction: column; padding: var(--space-4); }
+  .doc-sidebar {
+    position: static;
+    width: 100%;
+    margin-bottom: var(--space-6);
+  }
+  .doc-nav { flex-direction: row; flex-wrap: wrap; }
+  .doc-content { margin-left: 0; }
+  .workflow-diagram__node { max-width: 100%; }
+  .pipeline-diagram__step { flex-wrap: wrap; }
+  .pipeline-diagram__step-link { opacity: 1; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    COMMIT HEATMAP
    ═══════════════════════════════════════════════════════════════════ */

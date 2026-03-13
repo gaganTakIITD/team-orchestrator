@@ -56,13 +56,14 @@ ollama pull nomic-embed-text
 **From GitHub (recommended):**
 
 ```bash
-pip install "git+https://github.com/tejashvikumawat/14_Git_Hooks.git#subdirectory=team-orchestrator"
+pip install "git+https://github.com/gaganTakIITD/team-orchestrator.git"
+
 ```
 
 **Or with pipx (isolated environment):**
 
 ```bash
-pipx install "git+https://github.com/tejashvikumawat/14_Git_Hooks.git#subdirectory=team-orchestrator"
+pipx install "git+https://github.com/gaganTakIITD/team-orchestrator.git"
 ```
 
 **Local development:**
@@ -116,8 +117,8 @@ team-orchestrator serve
 
 You should see:
 ```
-🌐 API:       http://localhost:8000
-📖 Docs:      http://localhost:8000/docs
+API:       http://localhost:8000
+Docs:      http://localhost:8000/docs
 ```
 
 **Terminal 2 — Frontend Dashboard (port 5173):**
@@ -152,7 +153,7 @@ The CLI pushes analysis data to the server. Refresh the dashboard to see results
 | Service | Default Port | Change With |
 |---------|--------------|-------------|
 | **Backend API** | 8000 | `team-orchestrator serve --port 8001` |
-| **Frontend** | 5173 | `npm run dev -- --port 5174` (Vite) |
+| **Frontend** | 5173 | `npm run dev -- --port 5173` (Vite) |
 
 **Important:** The frontend expects the API at `http://localhost:8000`. If you use a different API port, update `dashboard/src/api/client.js` (set `API_BASE`) or use environment variables at build time.
 
