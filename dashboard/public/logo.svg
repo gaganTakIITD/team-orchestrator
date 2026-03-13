@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
+  <rect width="36" height="36" rx="8" fill="url(#logo-grad)"/>
+  <!-- Conductor baton + connected nodes (orchestration) -->
+  <circle cx="12" cy="14" r="3" fill="white" fill-opacity="0.95"/>
+  <circle cx="24" cy="14" r="3" fill="white" fill-opacity="0.95"/>
+  <circle cx="18" cy="22" r="3" fill="white" fill-opacity="0.95"/>
+  <path d="M12 14L18 22M24 14L18 22M12 14L24 14" stroke="white" stroke-opacity="0.9" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="18" cy="10" r="1.5" fill="white" fill-opacity="0.8"/>
+  <defs>
+    <linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>

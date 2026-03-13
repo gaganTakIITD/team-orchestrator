@@ -1,13 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { GripVertical } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
-
-const IconActivity = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-  </svg>
-);
+import { useSidebar } from '../../context/SidebarContext';
 
 const IconMoon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -68,6 +64,33 @@ export function Sidebar() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllRepos, setShowAllRepos] = useState(false);
+  const { width, setWidth } = useSidebar();
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
+
+  const handleResizeStart = useCallback(
+    (e) => {
+      e.preventDefault();
+      startXRef.current = e.clientX;
+      startWidthRef.current = width;
+      const onMove = (ev) => {
+        const delta = ev.clientX - startXRef.current;
+        setWidth(startWidthRef.current + delta);
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    [width, setWidth]
+  );
+
   const {
     currentRole, projects,
     selectedProject, setSelectedProject,
@@ -89,10 +112,22 @@ export function Sidebar() {
   }, [projects]);
 
   return (
-    <nav className="sidebar" role="navigation" aria-label="Main navigation">
+    <nav className="sidebar" role="navigation" aria-label="Main navigation" style={{ width: `${width}px` }}>
+      {/* Resize handle */}
+      <div
+        className="sidebar-resize-handle"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize sidebar"
+        onMouseDown={handleResizeStart}
+      >
+        <GripVertical size={14} />
+      </div>
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon"><IconActivity /></div>
+        <div className="sidebar-logo-icon">
+          <img src="/logo.svg" alt="" width={36} height={36} />
+        </div>
         <div className="sidebar-logo-text">
           <h1>Team</h1>
           <span className="subtitle">Orchestrator</span>
