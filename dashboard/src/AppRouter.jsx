@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAppContext } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
@@ -52,8 +52,35 @@ function DashboardContent() {
   return <ProjectDashboard project={selectedProject} />;
 }
 
+const AUTH_WAIT_MS = 5000;
+
 function ProtectedRoute() {
   const { authUser, isAuthLoading, hasCompletedOnboarding } = useAppContext();
+  const [authWaitElapsed, setAuthWaitElapsed] = useState(false);
+
+  useEffect(() => {
+    if (authUser) {
+      setAuthWaitElapsed(false);
+      return;
+    }
+    setAuthWaitElapsed(false);
+    const t = setTimeout(() => setAuthWaitElapsed(true), AUTH_WAIT_MS);
+    return () => clearTimeout(t);
+  }, [authUser]);
+
+  if (!authUser) {
+    if (!authWaitElapsed) {
+      return (
+        <div className="flex-center" style={{ minHeight: '100vh', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div className="spinner" />
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+            Checking authentication…
+          </p>
+        </div>
+      );
+    }
+    return <Navigate to="/" replace />;
+  }
 
   if (isAuthLoading || hasCompletedOnboarding === null) {
     return (
@@ -61,10 +88,6 @@ function ProtectedRoute() {
         <div className="spinner" />
       </div>
     );
-  }
-
-  if (!authUser) {
-    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -77,16 +100,16 @@ function ProtectedRoute() {
 function OnboardingGuard() {
   const { authUser, isAuthLoading, hasCompletedOnboarding } = useAppContext();
 
+  if (!authUser) {
+    return <Navigate to="/" replace />;
+  }
+
   if (isAuthLoading || hasCompletedOnboarding === null) {
     return (
       <div className="flex-center" style={{ minHeight: '100vh' }}>
         <div className="spinner" />
       </div>
     );
-  }
-
-  if (!authUser) {
-    return <Navigate to="/login" replace />;
   }
 
   if (!hasCompletedOnboarding) {

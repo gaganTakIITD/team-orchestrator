@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../components/layout/GlassCard';
 import { Button } from '../components/ui/components';
 import { useSearchParams } from 'react-router-dom';
 import BackgroundScene from '../components/BackgroundScene';
+import { useAppContext } from '../context/AppContext';
 
 const IconGitHub = () => (
   <svg viewBox="0 0 24 24" fill="currentColor">
@@ -20,8 +22,14 @@ const IconAlertCircle = () => (
 );
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const { authUser, isAuthLoading } = useAppContext();
   const [searchParams] = useSearchParams();
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (!isAuthLoading && authUser) navigate('/dashboard', { replace: true });
+  }, [authUser, isAuthLoading, navigate]);
 
   useEffect(() => {
     const err = searchParams.get('error');

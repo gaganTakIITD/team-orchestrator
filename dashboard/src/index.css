@@ -2227,7 +2227,6 @@ code, kbd {
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
   border-color: var(--color-border-active);
 }
@@ -2244,7 +2243,7 @@ code, kbd {
   transition: transform var(--transition-slow);
 }
 
-.feature-card:hover .feature-icon { transform: scale(1.08); }
+.feature-card .feature-icon { transition: transform 0.3s ease; }
 
 .feature-icon svg { width: 24px; height: 24px; color: var(--color-accent); }
 .feature-icon.success { background: var(--color-success-subtle); }
@@ -2294,7 +2293,6 @@ code, kbd {
 
 .step-card:hover {
   border-color: var(--color-border-active);
-  transform: translateY(-3px);
 }
 
 .step-number {

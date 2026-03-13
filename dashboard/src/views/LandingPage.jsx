@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { Button } from '../components/ui/components';
 import BackgroundScene from '../components/BackgroundScene';
 import { TiltCard } from '../components/ui/TiltCard';
+import { useAppContext } from '../context/AppContext';
 
 const IconArrowRight = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -72,19 +73,48 @@ function ScrollProgress() {
   );
 }
 
+function ScrollReveal({ children, className = '', offsetStart = 'start 0.9', offsetEnd = 'start 0.35' }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: [offsetStart, offsetEnd],
+  });
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0, 0.6, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [48, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.96, 1]);
+  return (
+    <motion.div ref={ref} style={{ opacity, y, scale }} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
 const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+
+const staggerSlower = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.8, 0.25, 1] } },
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.92 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.25, 0.8, 0.25, 1] } },
+  hidden: { opacity: 0, scale: 0.88 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
 const stats = [
@@ -126,17 +156,21 @@ const scoringDimensions = [
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const { authUser } = useAppContext();
   const containerRef = useRef(null);
   const bgRef = useRef(null);
   const [launching, setLaunching] = useState(false);
 
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.96]);
 
   const handleLaunch = () => {
     if (launching) return;
+    if (authUser) {
+      navigate('/dashboard');
+      return;
+    }
     setLaunching(true);
     bgRef.current?.triggerWarp();
     setTimeout(() => navigate('/login'), 1100);
@@ -145,9 +179,9 @@ export function LandingPage() {
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       <ScrollProgress />
-      <motion.div style={{ position: 'fixed', inset: 0, zIndex: 0, y: bgY }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
         <BackgroundScene ref={bgRef} />
-      </motion.div>
+      </div>
 
       {launching && (
         <motion.div
@@ -202,6 +236,7 @@ export function LandingPage() {
         </motion.section>
 
         {/* Animated Stats */}
+        <ScrollReveal>
         <motion.div
           className="stats-strip"
           variants={stagger}
@@ -210,7 +245,13 @@ export function LandingPage() {
           viewport={{ once: true, margin: '-80px' }}
         >
           {stats.map((s, i) => (
-            <motion.div key={i} variants={fadeInUp}>
+            <motion.div
+              key={i}
+              variants={fadeInUp}
+              whileHover={{ scale: 1.04, y: -6 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
               <TiltCard className="stat-strip-item">
                 <div className="stat-strip-value">
                   <AnimatedCounter value={s.value} suffix={s.suffix} />
@@ -220,8 +261,10 @@ export function LandingPage() {
             </motion.div>
           ))}
         </motion.div>
+        </ScrollReveal>
 
         {/* Scoring Rubric */}
+        <ScrollReveal>
         <motion.section
           className="scoring-section"
           variants={stagger}
@@ -237,7 +280,14 @@ export function LandingPage() {
           </motion.p>
           <div className="scoring-grid">
             {scoringDimensions.map((d, i) => (
-              <motion.div key={i} variants={scaleIn} className="scoring-card">
+              <motion.div
+                key={i}
+                variants={scaleIn}
+                className="scoring-card"
+                whileHover={{ scale: 1.03, y: -4 }}
+                whileTap={{ scale: 0.99 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
                 <div className="scoring-card-weight" style={{ color: d.color }}>{d.weight}</div>
                 <div className="scoring-card-label">{d.label}</div>
                 <div className="scoring-card-desc">{d.desc}</div>
@@ -255,11 +305,13 @@ export function LandingPage() {
             ))}
           </div>
         </motion.section>
+        </ScrollReveal>
 
         {/* Features */}
+        <ScrollReveal>
         <motion.section
           className="features-section"
-          variants={stagger}
+          variants={staggerSlower}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-60px' }}
@@ -272,9 +324,21 @@ export function LandingPage() {
           </motion.p>
           <div className="features-grid">
             {features.map((f, idx) => (
-              <motion.div key={idx} variants={fadeInUp}>
+              <motion.div
+                key={idx}
+                variants={fadeInUp}
+                whileHover={{ scale: 1.03, y: -8 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+              >
                 <TiltCard className="feature-card">
-                  <div className={`feature-icon ${f.cls}`}>{f.icon}</div>
+                  <motion.div
+                    className={`feature-icon ${f.cls}`}
+                    whileHover={{ scale: 1.12, rotate: 5 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                  >
+                    {f.icon}
+                  </motion.div>
                   <h3>{f.title}</h3>
                   <p>{f.desc}</p>
                 </TiltCard>
@@ -282,8 +346,10 @@ export function LandingPage() {
             ))}
           </div>
         </motion.section>
+        </ScrollReveal>
 
         {/* How It Works */}
+        <ScrollReveal>
         <motion.section
           className="how-section"
           variants={stagger}
@@ -300,9 +366,21 @@ export function LandingPage() {
               { step: '2', title: 'Analyze', desc: 'Run team-orchestrator analyze — local AI scores every commit in minutes.' },
               { step: '3', title: 'Dashboard', desc: 'Open the web dashboard to view leaderboards, insights, and coaching.' },
             ].map((s, i) => (
-              <motion.div key={i} variants={fadeInUp}>
+              <motion.div
+                key={i}
+                variants={fadeInUp}
+                whileHover={{ scale: 1.04, y: -8 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
                 <TiltCard className="step-card">
-                  <div className="step-number">{s.step}</div>
+                  <motion.div
+                    className="step-number"
+                    whileHover={{ scale: 1.15 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                  >
+                    {s.step}
+                  </motion.div>
                   <h4>{s.title}</h4>
                   <p>{s.desc}</p>
                 </TiltCard>
@@ -310,8 +388,10 @@ export function LandingPage() {
             ))}
           </div>
         </motion.section>
+        </ScrollReveal>
 
         {/* Tech Stack */}
+        <ScrollReveal>
         <motion.section
           className="tech-section"
           variants={stagger}
@@ -327,15 +407,24 @@ export function LandingPage() {
           </motion.p>
           <div className="tech-grid">
             {techStack.map((t, i) => (
-              <motion.div key={i} variants={scaleIn} className="tech-pill">
+              <motion.div
+                key={i}
+                variants={scaleIn}
+                className="tech-pill"
+                whileHover={{ scale: 1.06, y: -3 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+              >
                 <div className="tech-pill-name">{t.name}</div>
                 <div className="tech-pill-role">{t.role}</div>
               </motion.div>
             ))}
           </div>
         </motion.section>
+        </ScrollReveal>
 
         {/* Two-Portal Section */}
+        <ScrollReveal>
         <motion.section
           className="portals-section"
           variants={stagger}
@@ -350,7 +439,13 @@ export function LandingPage() {
             GitHub OAuth automatically assigns your role based on repository ownership.
           </motion.p>
           <div className="portals-grid">
-            <motion.div variants={fadeInUp} className="portal-card portal-supervisor">
+            <motion.div
+              variants={fadeInUp}
+              className="portal-card portal-supervisor"
+              whileHover={{ scale: 1.02, y: -6 }}
+              whileTap={{ scale: 0.99 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+            >
               <div className="portal-card-badge">Supervisor</div>
               <h4>Repository Owners</h4>
               <ul>
@@ -362,7 +457,13 @@ export function LandingPage() {
                 <li>Commit Heatmaps</li>
               </ul>
             </motion.div>
-            <motion.div variants={fadeInUp} className="portal-card portal-contributor">
+            <motion.div
+              variants={fadeInUp}
+              className="portal-card portal-contributor"
+              whileHover={{ scale: 1.02, y: -6 }}
+              whileTap={{ scale: 0.99 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+            >
               <div className="portal-card-badge">Contributor</div>
               <h4>Team Members</h4>
               <ul>
@@ -376,23 +477,31 @@ export function LandingPage() {
             </motion.div>
           </div>
         </motion.section>
+        </ScrollReveal>
 
         {/* CTA */}
         <motion.section
           className="cta-section"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0, scale: 0.95, y: 24 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <h2>Ready to Analyze?</h2>
           <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-8)', fontSize: 'var(--text-lg)', fontWeight: 300 }}>
             Sign in with GitHub and start getting AI-powered contribution insights today.
           </p>
-          <Button className="btn-lg" onClick={handleLaunch}>
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            style={{ display: 'inline-block' }}
+          >
+            <Button className="btn-lg" onClick={handleLaunch}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
             Launch Dashboard
           </Button>
+          </motion.div>
         </motion.section>
 
         {/* Footer */}
